@@ -1,0 +1,889 @@
+.font-studio,
+.fonts-page,
+.font-route-state {
+  --font-ink: var(--ink);
+  --font-accent: var(--accent);
+  --font-accent-soft: var(--accent-soft);
+  --font-paper: var(--surface);
+  --font-wash: var(--surface-alt);
+  --font-line: var(--border);
+  --font-muted: var(--muted);
+  --font-warning: #9b6a27;
+  color: var(--font-ink);
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 30px 34px 56px;
+}
+
+.font-studio button,
+.fonts-page button,
+.font-route-state button,
+.font-studio input,
+.font-studio textarea,
+.fonts-page input {
+  font: inherit;
+}
+
+.font-studio h1,
+.font-studio h2,
+.fonts-page h1,
+.fonts-page h2,
+.font-route-state h1 {
+  color: var(--font-ink);
+  font-family: Lora, Georgia, serif;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.font-studio-header,
+.fonts-page-heading {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.font-title-wrap {
+  max-width: 650px;
+}
+
+.font-title-wrap h1,
+.fonts-page-heading h1,
+.font-route-state h1 {
+  font-size: clamp(2rem, 3vw, 3.12rem);
+  line-height: 1.08;
+}
+
+.font-title-wrap > p:last-child,
+.fonts-page-heading > div > p:last-child,
+.font-route-state > p:not(.eyebrow) {
+  color: var(--font-muted);
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+
+.font-back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--font-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  gap: 3px;
+  margin: 0 0 11px;
+  padding: 4px 0;
+}
+
+.font-back:hover {
+  color: var(--font-accent);
+}
+
+.font-header-actions {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.font-name-field,
+.font-modal-field,
+.font-preview-input {
+  display: grid;
+  gap: 6px;
+}
+
+.font-name-field > span,
+.font-modal-field > span,
+.font-preview-input > span {
+  color: var(--font-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.font-name-field input,
+.font-modal-field input,
+.font-preview-input textarea {
+  background: var(--font-paper);
+  border: 1px solid var(--font-line);
+  border-radius: 9px;
+  color: var(--font-ink);
+  outline: 0;
+}
+
+.font-name-field input {
+  min-width: 205px;
+  padding: 9px 11px;
+}
+
+.font-name-field input:focus,
+.font-modal-field input:focus,
+.font-preview-input textarea:focus {
+  border-color: var(--font-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--font-accent) 15%, transparent);
+}
+
+.font-overview {
+  align-items: center;
+  background: linear-gradient(104deg, var(--font-paper), #eef3ed);
+  border: 1px solid var(--font-line);
+  border-radius: 14px;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(154px, auto) 1fr auto;
+  margin-bottom: 20px;
+  padding: 15px 18px;
+}
+
+.font-progress-label {
+  display: grid;
+  gap: 2px;
+}
+
+.font-progress-label span,
+.font-progress-number {
+  color: var(--font-muted);
+  font-size: 0.78rem;
+}
+
+.font-progress-label strong {
+  font-size: 0.92rem;
+}
+
+.font-progress-track {
+  background: #d8ded8;
+  border-radius: 999px;
+  height: 7px;
+  overflow: hidden;
+}
+
+.font-progress-track > span {
+  background: var(--font-accent);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.font-studio-layout {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(208px, 0.78fr) minmax(420px, 1.75fr) minmax(
+      215px,
+      0.86fr
+    );
+}
+
+.font-studio .card,
+.font-gallery-card,
+.font-gallery-empty,
+.font-preview,
+.font-export-note {
+  background: var(--font-paper);
+  border: 1px solid var(--font-line);
+  border-radius: 15px;
+  box-shadow: 0 9px 25px rgba(52, 55, 45, 0.045);
+}
+
+.font-characters,
+.font-settings {
+  padding: 18px;
+}
+
+.font-side-heading,
+.font-drawing-heading,
+.font-preview-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.font-side-heading h2 {
+  align-items: center;
+  display: flex;
+  font-size: 1.15rem;
+  gap: 7px;
+}
+
+.font-side-heading > svg {
+  color: var(--font-accent);
+}
+
+.font-group-tabs {
+  border-bottom: 1px solid var(--font-line);
+  display: grid;
+  gap: 1px;
+  margin: 17px 0 14px;
+  padding-bottom: 13px;
+}
+
+.font-group-tabs button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--font-muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.76rem;
+  font-weight: 700;
+  justify-content: space-between;
+  padding: 8px 7px;
+  text-align: left;
+}
+
+.font-group-tabs button:hover,
+.font-group-tabs button.active {
+  background: var(--font-accent-soft);
+  color: var(--font-accent);
+}
+
+.font-group-tabs button span {
+  font-size: 0.68rem;
+  opacity: 0.7;
+}
+
+.character-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.character-cell {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #faf8f2;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--font-ink);
+  cursor: pointer;
+  display: flex;
+  font-family: Lora, Georgia, serif;
+  font-size: 1rem;
+  justify-content: center;
+  position: relative;
+}
+
+.character-cell:hover {
+  border-color: #b8cfc2;
+}
+.character-cell.selected {
+  background: var(--font-accent);
+  color: white;
+}
+.character-cell.complete:not(.selected) {
+  background: #e9f2ec;
+  color: var(--font-accent);
+}
+.character-cell.in-progress:not(.selected) {
+  border-color: var(--font-warning);
+}
+.character-cell svg {
+  bottom: 3px;
+  position: absolute;
+  right: 2px;
+}
+
+.font-drawing-card {
+  min-width: 0;
+  padding: 20px;
+}
+
+.font-drawing-heading {
+  margin-bottom: 16px;
+}
+
+.font-drawing-heading h2 {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+}
+
+.font-drawing-heading h2 > span {
+  color: var(--font-accent);
+  font-family: Caveat, cursive;
+  font-size: 3.5rem;
+  font-weight: 400;
+  line-height: 0.75;
+}
+
+.font-drawing-heading h2 small {
+  color: var(--font-muted);
+  font-family: Manrope, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.font-variant-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.font-variant-controls > button:not(.icon-btn) {
+  background: #f5f3ed;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--font-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  min-height: 29px;
+  min-width: 29px;
+}
+
+.font-variant-controls > button.active {
+  background: var(--font-accent);
+  color: white;
+}
+
+.font-canvas-wrap {
+  background: #fffefa;
+  border: 1px solid #ddd9cf;
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 7px rgba(246, 244, 237, 0.55);
+  overflow: hidden;
+  position: relative;
+}
+
+.font-canvas {
+  cursor: crosshair;
+  display: block;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+  width: 100%;
+}
+
+.font-canvas.erasing {
+  cursor: cell;
+}
+.font-guides line {
+  stroke: #d2ddd5;
+  stroke-dasharray: 5 6;
+  stroke-width: 1;
+}
+.font-guides .baseline {
+  stroke: #93aa9e;
+  stroke-dasharray: none;
+  stroke-width: 1.4;
+}
+.font-stroke {
+  fill: none;
+  pointer-events: none;
+  stroke: #263c33;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.font-canvas circle.font-stroke {
+  fill: #263c33;
+  stroke: none;
+}
+
+.font-empty-drawing {
+  align-items: center;
+  color: #a1a69f;
+  display: flex;
+  font-size: 0.8rem;
+  gap: 7px;
+  left: 50%;
+  margin: 0;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.font-tool-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 13px;
+}
+
+.font-tool-toggle {
+  background: #f2f0e9;
+  border-radius: 8px;
+  display: inline-flex;
+  padding: 3px;
+}
+
+.font-tool-toggle button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--font-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.75rem;
+  gap: 5px;
+  padding: 6px 8px;
+}
+
+.font-tool-toggle button.active {
+  background: var(--font-paper);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  color: var(--font-accent);
+}
+
+.font-width-control {
+  align-items: center;
+  color: var(--font-muted);
+  display: flex;
+  flex: 1 1 125px;
+  font-size: 0.72rem;
+  gap: 8px;
+  max-width: 185px;
+}
+
+.font-width-control input {
+  accent-color: var(--font-accent);
+  min-width: 45px;
+  width: 100%;
+}
+.font-width-control output {
+  color: var(--font-ink);
+  font-size: 0.72rem;
+  width: 18px;
+}
+
+.font-tool-actions {
+  display: flex;
+  gap: 4px;
+}
+.font-studio .icon-btn {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+.font-studio .icon-btn.active {
+  background: var(--font-accent-soft);
+  color: var(--font-accent);
+}
+.font-studio .icon-btn.danger:hover {
+  background: #f9e7e3;
+  color: #9a3f31;
+}
+
+.font-inline-hint,
+.font-variant-note,
+.font-setting-note {
+  align-items: flex-start;
+  color: var(--font-muted);
+  display: flex;
+  font-size: 0.72rem;
+  gap: 6px;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+.font-variant-note {
+  border-top: 1px solid var(--font-line);
+  padding-top: 10px;
+}
+.font-inline-hint {
+  color: var(--font-warning);
+}
+
+.font-settings {
+  display: grid;
+  gap: 14px;
+}
+.font-settings .font-side-heading {
+  border-bottom: 1px solid var(--font-line);
+  padding-bottom: 14px;
+}
+
+.font-range {
+  display: grid;
+  gap: 6px;
+}
+.font-range > span {
+  align-items: center;
+  color: var(--font-muted);
+  display: flex;
+  font-size: 0.73rem;
+  font-weight: 700;
+  justify-content: space-between;
+}
+.font-range output {
+  color: var(--font-ink);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.font-range input {
+  accent-color: var(--font-accent);
+  width: 100%;
+}
+.font-setting-note {
+  background: #f7f4ed;
+  border-radius: 8px;
+  margin-top: 2px;
+  padding: 8px;
+}
+
+.font-preview {
+  margin-top: 20px;
+  padding: 22px;
+}
+
+.font-preview-heading {
+  align-items: center;
+  margin-bottom: 16px;
+}
+.font-preview-heading h2 {
+  font-size: 1.45rem;
+}
+.font-preview-heading .tag {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+}
+
+.font-preview-input textarea {
+  line-height: 1.45;
+  min-height: 80px;
+  padding: 9px 11px;
+  resize: vertical;
+}
+
+.font-preview-text {
+  color: var(--font-ink);
+  font-size: clamp(1.5rem, 3vw, 2.45rem);
+  line-height: 1.45;
+  margin: 19px 2px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.font-preview-letter {
+  white-space: pre;
+}
+
+.font-missing {
+  align-items: flex-start;
+  border-radius: 9px;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 8px;
+  line-height: 1.45;
+  padding: 10px 11px;
+}
+
+.font-missing div {
+  display: grid;
+  gap: 2px;
+}
+.font-missing.warning {
+  background: #fdf3e3;
+  color: #875d22;
+}
+.font-missing.ok {
+  background: #eaf3ed;
+  color: var(--font-accent);
+}
+
+.font-export-note {
+  align-items: center;
+  display: flex;
+  gap: 13px;
+  margin-top: 20px;
+  padding: 16px 18px;
+}
+
+.font-export-note > svg {
+  color: var(--font-accent);
+  flex: 0 0 auto;
+}
+.font-export-note > div {
+  flex: 1;
+}
+.font-export-note strong {
+  font-size: 0.86rem;
+}
+.font-export-note p,
+.font-export-note small {
+  color: var(--font-muted);
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  margin: 3px 0;
+}
+
+.font-modal-copy {
+  color: var(--font-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+.font-modal-actions {
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.font-modal-field small {
+  color: var(--font-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.font-modal-field input {
+  padding: 10px 11px;
+}
+
+.fonts-page-heading {
+  margin-bottom: 26px;
+}
+.fonts-page-heading > div {
+  max-width: 600px;
+}
+.fonts-page-heading > div > p:last-child {
+  max-width: 530px;
+}
+
+.font-gallery {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.font-gallery-card {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+.font-gallery-paper {
+  align-items: center;
+  background-color: #fbf9f2;
+  background-image: linear-gradient(#e5e1d5 1px, transparent 1px);
+  background-size: 100% 29px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 150px;
+  overflow: hidden;
+  padding: 20px;
+  position: relative;
+}
+
+.font-sample {
+  color: #254438;
+  font-size: 5.2rem;
+  line-height: 1;
+  transform: rotate(-4deg);
+}
+
+.font-gallery-paper > span:last-child {
+  bottom: 10px;
+  color: var(--font-muted);
+  font-size: 0.68rem;
+  position: absolute;
+  right: 12px;
+}
+
+.font-gallery-info {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 16px 16px 7px;
+}
+
+.font-gallery-info h2 {
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.font-gallery-info p {
+  color: var(--font-muted);
+  font-size: 0.72rem;
+  margin: 5px 0 0;
+}
+.font-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: flex-end;
+}
+.font-open-button {
+  margin: 4px 16px 16px;
+}
+
+.font-gallery-empty {
+  margin: 45px auto;
+  max-width: 520px;
+  padding: 40px 28px;
+  text-align: center;
+}
+.font-gallery-empty .empty-icon {
+  margin: 0 auto 12px;
+}
+.font-gallery-empty h2 {
+  font-size: 1.45rem;
+}
+.font-gallery-empty p {
+  color: var(--font-muted);
+  line-height: 1.55;
+  margin: 9px auto 18px;
+  max-width: 410px;
+}
+
+.font-route-state {
+  max-width: 620px;
+  padding-top: 80px;
+}
+.font-route-state .btn {
+  margin-top: 18px;
+}
+
+html[data-theme="dark"] .font-canvas-wrap,
+html[data-theme="dark"] .font-gallery-paper {
+  background-color: #fbf9f2;
+}
+html[data-theme="dark"] .font-name-field input,
+html[data-theme="dark"] .font-modal-field input,
+html[data-theme="dark"] .font-preview-input textarea {
+  background: #27322d;
+  color: var(--font-ink);
+}
+html[data-theme="dark"] .font-tool-toggle,
+html[data-theme="dark"] .font-variant-controls > button:not(.icon-btn),
+html[data-theme="dark"] .font-setting-note {
+  background: #29332e;
+}
+html[data-theme="dark"] .character-cell {
+  background: #29332e;
+  color: var(--font-ink);
+}
+html[data-theme="dark"] .character-cell.complete:not(.selected) {
+  background: #254339;
+}
+
+@media (max-width: 1120px) {
+  .font-studio-layout {
+    grid-template-columns: minmax(190px, 0.7fr) minmax(390px, 1.6fr);
+  }
+  .font-settings {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .font-settings .font-side-heading,
+  .font-settings .font-setting-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .font-studio,
+  .fonts-page,
+  .font-route-state {
+    padding: 22px 16px 40px;
+  }
+  .font-studio-header,
+  .fonts-page-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .font-header-actions {
+    justify-content: stretch;
+  }
+  .font-header-actions .btn {
+    flex: 1;
+  }
+  .font-name-field {
+    flex: 1;
+  }
+  .font-name-field input {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+  }
+  .font-overview {
+    gap: 9px;
+    grid-template-columns: 1fr auto;
+  }
+  .font-progress-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .font-studio-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .font-characters,
+  .font-drawing-card,
+  .font-settings {
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .font-characters {
+    order: 2;
+  }
+  .font-drawing-card {
+    order: 1;
+    padding: 15px;
+  }
+  .font-settings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    order: 3;
+  }
+  .font-group-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .font-tool-row {
+    align-items: stretch;
+  }
+  .font-width-control {
+    max-width: none;
+    order: 3;
+    width: 100%;
+  }
+  .font-tool-actions {
+    margin-left: auto;
+  }
+  .font-preview {
+    padding: 17px;
+  }
+  .font-export-note {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .font-export-note .btn {
+    margin-left: 31px;
+  }
+}
+
+@media (max-width: 430px) {
+  .font-title-wrap h1,
+  .fonts-page-heading h1 {
+    font-size: 2rem;
+  }
+  .font-drawing-heading h2 > span {
+    font-size: 3rem;
+  }
+  .font-tool-row .btn {
+    flex: 1 1 auto;
+  }
+  .font-variant-controls {
+    max-width: 145px;
+  }
+  .font-settings {
+    display: grid;
+    gap: 13px;
+    grid-template-columns: 1fr;
+  }
+  .font-gallery {
+    grid-template-columns: 1fr;
+  }
+}

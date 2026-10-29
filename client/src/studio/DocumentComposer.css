@@ -1,0 +1,254 @@
+.document-composer {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 26px clamp(18px, 4vw, 64px) 72px;
+  color: #243b33;
+}
+.composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 46px;
+}
+.composer-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  color: #63736b;
+  font-weight: 700;
+  cursor: pointer;
+}
+.composer-back:hover {
+  color: var(--accent);
+}
+.composer-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #9aa39d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.composer-step span:not(.step-active):not(:last-child) {
+  width: 34px;
+  height: 1px;
+  background: #dfe4df;
+}
+.composer-step .step-active {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+}
+.composer-intro {
+  max-width: 680px;
+  margin: 0 auto 35px;
+  text-align: center;
+}
+.composer-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 17px;
+  border-radius: 13px;
+  background: #e8f0e9;
+  color: var(--accent);
+}
+.composer-intro h1 {
+  margin: 8px 0 14px;
+  color: #243b33;
+  font-family: Lora, Georgia, serif;
+  font-size: clamp(2.3rem, 6vw, 4.6rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.03;
+}
+.composer-intro h1 em {
+  color: var(--accent);
+  font-weight: 400;
+}
+.composer-intro > p:last-child {
+  max-width: 590px;
+  margin: 0 auto;
+  color: #738078;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.composer-form {
+  padding: clamp(21px, 3vw, 38px);
+  border: 1px solid #e1e7e1;
+  border-radius: 24px;
+  background: #fffefa;
+  box-shadow: 0 18px 50px rgba(43, 65, 53, 0.08);
+}
+.composer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.composer-field > span:first-child {
+  color: #53635c;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.composer-field small {
+  color: #8b958f;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.composer-field input:not([type="color"]),
+.composer-field select,
+.composer-field textarea {
+  width: 100%;
+  border: 1px solid #dfe5df;
+  border-radius: 11px;
+  background: #fbfcfa;
+  color: #294037;
+  outline: none;
+  padding: 12px 13px;
+}
+.composer-field input:focus,
+.composer-field select:focus,
+.composer-field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 86%);
+}
+.composer-title-field {
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+.composer-text-field textarea {
+  min-height: 255px;
+  resize: vertical;
+  font-family: Lora, Georgia, serif;
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+.composer-text-field > small {
+  text-align: right;
+}
+.composer-options {
+  display: grid;
+  grid-template-columns: 1.4fr 0.75fr 0.75fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+.composer-paper-field {
+  grid-column: 1/-1;
+}
+.composer-paper-field small {
+  margin-top: 0;
+}
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px !important;
+  height: 45px;
+  border: 1px solid #dfe5df;
+  border-radius: 11px;
+  background: #fbfcfa;
+  padding: 5px 10px;
+}
+.color-input-wrap input[type="color"] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.color-input-wrap code {
+  color: #65746c;
+  font-size: 0.76rem;
+}
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid #edf0ec;
+}
+.composer-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+}
+.composer-actions > div > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.composer-actions strong {
+  color: #3b5147;
+  font-size: 0.83rem;
+}
+.composer-actions small {
+  color: #89948e;
+  font-size: 0.75rem;
+}
+.composer-generate {
+  padding: 13px 20px;
+}
+.composer-generate:disabled {
+  opacity: 0.45;
+}
+@media (max-width: 700px) {
+  .composer-header {
+    margin-bottom: 32px;
+  }
+  .composer-step {
+    transform: scale(0.85);
+    transform-origin: right;
+  }
+  .composer-intro {
+    text-align: left;
+  }
+  .composer-mark {
+    margin-left: 0;
+  }
+  .composer-intro > p:last-child {
+    margin-left: 0;
+  }
+  .composer-options {
+    grid-template-columns: 1fr 1fr;
+  }
+  .composer-paper-field {
+    grid-column: 1/-1;
+  }
+  .composer-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .composer-generate {
+    justify-content: center;
+    width: 100%;
+  }
+}
+@media (max-width: 460px) {
+  .composer-options {
+    grid-template-columns: 1fr;
+  }
+  .composer-paper-field {
+    grid-column: auto;
+  }
+  .composer-form {
+    border-radius: 18px;
+    padding: 18px;
+  }
+  .composer-intro h1 {
+    font-size: 2.65rem;
+  }
+}

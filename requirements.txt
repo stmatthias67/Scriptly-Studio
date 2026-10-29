@@ -1,0 +1,783 @@
+MASTER PROMPT — BUILD A COMPLETE GERMAN HANDWRITING FONT & DIGITAL PAPER WEB APP
+
+1. Your Role
+
+You are a senior full-stack developer, UI/UX designer, software architect, and product engineer. Your task is to build a complete, modern, premium-quality web application that allows users to create their own handwriting fonts, write digital documents in their personal handwriting, customize every aspect of the paper and page design, and export their finished work for use in GoodNotes and other applications.
+
+You must work directly with the existing project and produce a genuinely functional application, not just a design concept or prototype.
+
+2. CRITICAL REQUIREMENT: REPLACE THE EXISTING CODE
+
+Before writing any code, inspect the entire existing project.
+
+Follow these steps in order:
+
+1. Identify the current framework, project structure, entry points, dependencies, existing components, styles, and configuration files.
+2. Determine how the application currently starts and builds.
+3. Identify which existing files must be replaced, removed, or created.
+4. Completely replace the existing application code with a new, clean implementation. Do not simply add a new page to the old application, preserve an outdated interface, or patch the old implementation.
+5. Replace obsolete components, old layouts, placeholder screens, and conflicting styles where necessary.
+6. Keep only existing configuration, dependencies, assets, and infrastructure that are genuinely useful and compatible with the new implementation.
+7. Create all required new files and implement the complete application.
+8. Install or update dependencies when the environment allows it.
+9. Run the available build, type checks, and tests. Fix errors instead of leaving them unresolved.
+10. Verify that the application starts correctly and that the main features work.
+
+Do not delete essential project configuration blindly. Preserve the ability to install dependencies and run the project.
+
+If you have direct access to the project's files and terminal, perform the changes yourself. Do not merely provide instructions or code snippets for me to implement manually.
+
+If something cannot be completed because a required tool, package, backend, or permission is unavailable, clearly explain the limitation and implement the best working alternative.
+
+3. Product Vision
+
+Create a premium web application for people who want to create and use their own handwriting digitally.
+
+The application must allow users to:
+
+- Create a digital font based on their own handwriting.
+- Draw individual letters, numbers, punctuation marks, and special characters.
+- Preview how their handwriting looks in real sentences and paragraphs.
+- Write documents using their custom handwriting.
+- Design their own digital paper, notebooks, and page templates.
+- Customize text, paper, colors, spacing, layout, and other design details.
+- Create multi-page documents.
+- Export documents as high-quality images and PDFs.
+- Import exported PDFs into GoodNotes and similar note-taking applications.
+- Save their documents, font projects, and favorite paper templates.
+
+The experience should feel like a combination of a professional handwriting studio, a digital notebook designer, and a simple document editor.
+
+Working product name: Scriptly Studio
+
+The name, logo, and branding must be easy to change later.
+
+4. LANGUAGE REQUIREMENT — EXTREMELY IMPORTANT
+
+The entire user-facing website must be in German.
+
+This includes:
+
+- Navigation
+- Buttons
+- Menus
+- Headings
+- Tooltips
+- Forms
+- Input labels
+- Settings
+- Notifications
+- Error messages
+- Empty states
+- Onboarding
+- Tutorials
+- Export dialogs
+- Account screens
+- Help pages
+- Confirmation messages
+
+Use natural, clear, grammatically correct German. Avoid unnecessary English expressions in the interface.
+
+Examples:
+
+- Dashboard → Übersicht
+- Create Font → Schrift erstellen
+- My Fonts → Meine Schriften
+- New Document → Neues Dokument
+- Paper Studio → Papierstudio
+- Templates → Vorlagen
+- Export → Exportieren
+- Settings → Einstellungen
+- Save Changes → Änderungen speichern
+- Undo → Rückgängig
+- Redo → Wiederholen
+- Upload → Hochladen
+- Download → Herunterladen
+
+The internal code, variable names, technical documentation, and this development prompt may be in English. The actual application interface must be German.
+
+Use a centralized translation or localization structure so that additional languages can be introduced in the future without rewriting the application.
+
+5. Design and User Experience
+
+Create a polished, modern, premium interface with a strong visual identity.
+
+Design direction:
+
+- Minimalist and elegant
+- Bright, calm workspace by default
+- Warm white and subtle neutral backgrounds
+- Carefully selected accent colors
+- Rounded corners used consistently
+- Soft shadows and subtle borders
+- Excellent typography
+- Plenty of whitespace
+- Smooth but restrained animations
+- Clear visual hierarchy
+- Responsive layouts
+- Professional desktop experience
+- Fully usable mobile and tablet layouts
+
+The application should feel like a real commercial product, not a generic AI-generated dashboard.
+
+Use a persistent sidebar on desktop with navigation such as:
+
+- Übersicht
+- Meine Schriften
+- Schrift erstellen
+- Dokumente
+- Papierstudio
+- Vorlagen
+- Einstellungen
+
+On mobile, use a compact navigation system.
+
+Provide both light and dark modes.
+
+Let users personalize the application's accent color, interface density, and selected appearance settings.
+
+All buttons must have real functionality. Do not create decorative controls that do nothing.
+
+6. Dashboard
+
+Build a useful German-language dashboard.
+
+Include:
+
+- Welcome section
+- Button for creating a new document
+- Button for creating a handwriting font
+- Recent documents
+- Saved handwriting fonts
+- Favorite paper templates
+- Quick-start actions
+- Recently used colors and styles, if useful
+- Helpful onboarding for new users
+- Clear empty states when the user has not created anything yet
+
+Display documents as attractive cards with previews, titles, dates, and available actions.
+
+Users must be able to open, rename, duplicate, delete, and export their documents.
+
+7. Handwriting Font Creator
+
+This is one of the most important features.
+
+Create a dedicated interface that helps users transform their own handwriting into a reusable digital font.
+
+Character collection
+
+Provide a guided workflow for creating the handwriting font.
+
+Include separate character groups:
+
+- Uppercase letters: A–Z
+- Lowercase letters: a–z
+- Numbers: 0–9
+- Punctuation marks
+- German special characters: ä, ö, ü, Ä, Ö, Ü, ß
+- Additional useful symbols
+
+Show the required characters in an organized grid.
+
+Each character should have a clear status:
+
+- Not started
+- In progress
+- Completed
+
+Display a progress indicator showing how many characters have been completed.
+
+Allow users to work on characters individually and return to unfinished characters later.
+
+Drawing interface
+
+Implement a real drawing area that works with:
+
+- Mouse
+- Touchscreen
+- Stylus, where supported
+
+Provide drawing tools and controls:
+
+- Pen size
+- Eraser
+- Clear drawing
+- Undo
+- Redo
+- Drawing guidance
+- Baseline
+- Character height guides
+- Centering guides
+- Preview
+- Save character
+
+Use an appropriate drawing technology, such as HTML Canvas or SVG.
+
+Allow users to redraw a character without losing unrelated work.
+
+Font settings
+
+Let users customize:
+
+- Font name
+- Character size
+- Baseline alignment
+- Spacing between characters
+- Word spacing
+- Letter width
+- Slant
+- Overall appearance
+- Optional smoothness or stroke refinement
+
+Offer a preview area with realistic German example sentences and paragraphs.
+
+Examples:
+
+- „Hallo! Das ist meine eigene Handschrift.“
+- „Früher habe ich alles mit der Hand geschrieben.“
+- „Äpfel, Öl, Überarbeitung und Grüße.“
+
+Realistic handwriting
+
+Where technically feasible, support multiple variants of selected characters.
+
+For example, allow users to draw several versions of the same letter so that repeated characters can vary slightly.
+
+Use these variants to make longer texts appear more natural rather than mechanically repetitive.
+
+Allow users to control how much variation is applied.
+
+Do not promise natural variation unless the feature is genuinely implemented.
+
+Font generation
+
+Implement a real font-generation workflow.
+
+If technically supported by the chosen architecture, generate downloadable TTF or OTF font files from the collected glyphs using an appropriate font-generation library.
+
+Requirements:
+
+- Correct glyph mapping
+- Character spacing
+- Basic metrics
+- Character previews
+- Clear warnings about missing characters
+- Downloadable font file
+- Instructions for installing or using the font
+
+If complete TTF/OTF generation is not feasible in the current environment, implement the strongest working alternative: a reusable handwriting style for the document editor and reliable document export.
+
+Clearly distinguish between a real downloadable font file and an application-specific handwriting rendering system. Never create a fake font download.
+
+8. Digital Handwriting Document Editor
+
+Build a functional editor where users can create and design documents using their saved handwriting fonts.
+
+The editor should contain:
+
+- A central page workspace
+- A left sidebar for pages and document structure
+- A contextual formatting toolbar
+- A right sidebar for detailed design settings, where appropriate
+- A preview or presentation mode
+
+Users must be able to type text and display it in their selected handwriting style.
+
+Text formatting
+
+Support:
+
+- Multiple text blocks
+- Font selection
+- Font size
+- Text color
+- Bold and italic where appropriate
+- Line spacing
+- Letter spacing
+- Alignment
+- Paragraph spacing
+- Text rotation
+- Text block resizing
+- Text block positioning
+- Headings
+- Subheadings
+- Lists
+- Checklists
+
+Make the editing experience intuitive.
+
+Support selecting, moving, resizing, editing, duplicating, and deleting text elements.
+
+Implement undo and redo for meaningful editing actions.
+
+Multi-page documents
+
+Users must be able to:
+
+- Add pages
+- Delete pages
+- Duplicate pages
+- Reorder pages
+- Change page settings
+- Navigate between pages
+- Preview the complete document
+
+Where practical, support text flowing between pages without clipping or overlapping content.
+
+Otherwise, clearly indicate overflow and provide a usable way to continue on another page.
+
+Preserve the page order and layout during export.
+
+Additional page elements
+
+Support useful optional elements such as:
+
+- Images
+- Shapes
+- Lines
+- Arrows
+- Checkboxes
+- Highlighting
+- Decorative headings
+- Page numbers
+- Dates
+- Headers and footers
+
+Elements should be movable and resizable where appropriate.
+
+Do not overwhelm the default workspace with unnecessary tools. Keep advanced features accessible through contextual controls.
+
+9. Paper Studio — Deep Customization
+
+Build a dedicated Paper Studio that allows users to create their own digital paper.
+
+This must be one of the application's strongest features.
+
+Paper types
+
+Provide selectable presets for:
+
+- Blank paper
+- Lined paper
+- Grid paper
+- Dotted paper
+- Cornell notes
+- To-do lists
+- Weekly planners
+- Daily planners
+- Study notes
+- Journal pages
+- Custom layouts
+
+Paper appearance
+
+Allow customization of:
+
+- Background color
+- Line color
+- Grid color
+- Dot color
+- Line thickness
+- Line spacing
+- Grid size
+- Dot spacing
+- Page margins
+- Header area
+- Footer area
+- Paper texture, where implemented
+- Border
+- Background pattern
+- Transparency, where supported
+
+Offer a range of presets and a custom color picker.
+
+Page dimensions
+
+Support common paper sizes:
+
+- A4
+- A5
+- Letter
+- Custom dimensions
+
+Support portrait and landscape orientations.
+
+Keep proportions and dimensions accurate in exported PDFs.
+
+Templates
+
+Allow users to:
+
+- Create custom paper templates
+- Name templates
+- Save templates
+- Edit templates
+- Duplicate templates
+- Delete templates
+- Mark templates as favorites
+- Apply a template to an existing document
+- Use different templates on different pages
+
+Provide a template gallery with clear previews.
+
+10. Personalization Settings
+
+Users should be able to personalize both their documents and the application.
+
+Document defaults
+
+Allow users to set:
+
+- Default handwriting font
+- Default font size
+- Default text color
+- Default paper type
+- Default paper color
+- Default page format
+- Default orientation
+- Default margins
+- Default line spacing
+
+Interface personalization
+
+Allow users to configure:
+
+- Light or dark mode
+- Accent color
+- Compact or spacious layout
+- Sidebar behavior
+- Preferred starting screen
+- Optional keyboard shortcuts
+
+Persist these settings where the project's storage architecture allows it.
+
+11. Export and GoodNotes Compatibility
+
+Implement reliable exports.
+
+PDF export
+
+PDF export is essential.
+
+Allow users to export:
+
+- A single page
+- Selected pages
+- The complete document
+
+Preserve:
+
+- Page dimensions
+- Paper background
+- Handwriting
+- Text positioning
+- Colors
+- Shapes
+- Images
+- Page order
+- Margins
+- Page numbers
+
+Use appropriate PDF generation or rendering technology.
+
+Ensure that the resulting PDFs can be imported into GoodNotes and other PDF-compatible note-taking applications.
+
+Explain that the export is a PDF suitable for importing into GoodNotes, not a proprietary GoodNotes project file.
+
+Image export
+
+Support PNG and JPEG export where appropriate.
+
+Offer suitable resolution settings and preserve the visual layout.
+
+Export dialog
+
+Create a German-language export dialog with:
+
+- File name
+- Export format
+- Page selection
+- Image resolution, where applicable
+- Paper size
+- Export confirmation
+- Clear error handling
+
+Only display export formats that are actually supported.
+
+If PDF export fails, show a useful error message rather than silently downloading an empty or broken file.
+
+12. Saving and Data Persistence
+
+Users should not lose their work when refreshing or reopening the application.
+
+Implement appropriate persistence based on the existing project architecture.
+
+For a local-first implementation, use IndexedDB or another suitable browser storage solution for larger structured documents and drawing data.
+
+Use localStorage only for small settings or preferences where appropriate.
+
+Persist:
+
+- Documents
+- Pages
+- Text elements
+- Paper templates
+- Font projects
+- Character drawings
+- Interface preferences
+- Recent activity, where useful
+
+Implement automatic saving with a visible status indicator in German, such as:
+
+- „Speichert …“
+- „Alle Änderungen gespeichert“
+- „Speichern fehlgeschlagen“
+
+Avoid excessive writes and handle storage errors.
+
+If a backend already exists and is appropriate, integrate it properly.
+
+Do not invent a working cloud synchronization feature without a real backend.
+
+If authentication or cloud synchronization is not currently available, create a reliable local-first application and keep the architecture ready for future accounts and synchronization.
+
+13. File and Project Management
+
+Implement practical project management.
+
+Users should be able to:
+
+- Create documents
+- Rename documents
+- Duplicate documents
+- Delete documents with confirmation
+- Search documents
+- Sort documents
+- Organize favorites
+- Create and manage paper templates
+- Manage handwriting font projects
+
+Where possible, support importing compatible files or images into the document editor.
+
+Provide empty states and helpful validation messages in German.
+
+14. Technical Requirements
+
+First inspect the existing technology stack and use it intelligently.
+
+Do not switch frameworks unnecessarily if the current stack is suitable.
+
+If a new implementation is required, choose a modern and maintainable architecture appropriate to the environment.
+
+Possible technologies, depending on the existing project:
+
+- React
+- TypeScript
+- Vite or the existing framework
+- A suitable styling system
+- HTML Canvas or SVG for handwriting
+- A suitable PDF-generation library
+- IndexedDB for local document storage
+- An appropriate font-generation library if actual font downloads are supported
+
+These are suggestions, not permission to ignore the current project architecture.
+
+Code quality
+
+The code must be:
+
+- Modular
+- Maintainable
+- Typed where the stack supports typing
+- Accessible
+- Consistently formatted
+- Organized into reusable components
+- Free from avoidable duplication
+- Free from placeholder implementations presented as finished features
+
+Use clear data models for documents, pages, paper templates, glyphs, and font projects.
+
+Handle loading states, empty states, errors, and invalid input.
+
+Avoid putting the entire application into one enormous component.
+
+Security and privacy
+
+Validate imported files and user inputs.
+
+Avoid unsafe rendering of user-provided content.
+
+Do not expose secrets or API keys in client-side code.
+
+Do not collect personal data unnecessarily.
+
+Clearly distinguish local storage from cloud storage.
+
+15. Responsive Design and Accessibility
+
+The application must work on:
+
+- Desktop computers
+- Laptops
+- Tablets
+- Mobile phones
+
+Prioritize a comfortable desktop document-editing experience while ensuring that mobile users can still create and manage documents.
+
+Support keyboard navigation where practical.
+
+Use accessible labels, visible focus indicators, sufficient contrast, and appropriate semantic elements.
+
+Make drawing controls usable with touch and stylus input wherever supported.
+
+Do not let toolbars or dialogs cover essential content on smaller screens.
+
+16. Performance and Reliability
+
+Optimize for a smooth editing experience.
+
+Requirements:
+
+- Avoid unnecessary full-page rerenders.
+- Keep drawing responsive.
+- Handle multi-page documents efficiently.
+- Avoid unnecessary large image copies in memory.
+- Provide clear feedback for long-running exports.
+- Handle empty documents and missing characters safely.
+- Prevent accidental data loss.
+- Handle browser storage limits gracefully.
+
+Use efficient rendering and state management appropriate to the existing framework.
+
+17. Functional Testing
+
+Before declaring the application complete, verify the following.
+
+Core workflow
+
+1. Open the application.
+2. Create a handwriting font project.
+3. Draw and save several characters.
+4. Reopen the project and verify the drawings remain available.
+5. Preview the handwriting.
+6. Create a new document.
+7. Select a handwriting style.
+8. Add and format text.
+9. Change the paper type and appearance.
+10. Add and reorder pages.
+11. Save and reopen the document.
+12. Export a PDF.
+13. Verify the exported file is valid and contains the expected pages and content.
+14. Export an image if image export is implemented.
+15. Test light and dark modes.
+16. Test important features on a smaller screen.
+
+Also test:
+
+- Undo and redo
+- Autosave
+- Document duplication
+- Document deletion
+- Template creation
+- Template editing
+- Missing characters
+- Empty documents
+- Invalid inputs
+- Export errors
+- Refreshing the browser
+- Browser storage failures where practical
+
+Fix all issues discovered during testing.
+
+Do not claim a feature works merely because its button is visible.
+
+18. Implementation Priorities
+
+Build the application in this order:
+
+Priority 1 — Core application
+
+- Replace the existing application code.
+- Establish the new layout and German interface.
+- Build navigation and dashboard.
+- Implement project and document data models.
+- Ensure the application starts correctly.
+
+Priority 2 — Essential functionality
+
+- Create and manage handwriting projects.
+- Draw and save individual characters.
+- Implement the document editor.
+- Implement paper customization.
+- Add reliable saving and loading.
+- Implement PDF export.
+
+Priority 3 — Advanced features
+
+- Multiple handwriting variants.
+- Real TTF/OTF generation where feasible.
+- Multi-page editing improvements.
+- Advanced paper templates.
+- Image export.
+- Keyboard shortcuts and further personalization.
+
+Priority 4 — Quality
+
+- Responsive design.
+- Accessibility.
+- Error handling.
+- Performance improvements.
+- Testing and bug fixes.
+
+Deliver a working application before spending time on decorative extras.
+
+19. Final Acceptance Criteria
+
+The project is complete only when:
+
+- The previous application implementation has been replaced with the new implementation.
+- The project remains runnable using its documented commands.
+- The website interface is in German.
+- The design is polished and consistent.
+- The core navigation works.
+- Users can create and save handwriting projects.
+- Users can draw and store glyphs.
+- Users can create and edit documents.
+- Users can customize their paper.
+- Users can create and manage templates.
+- Documents survive refreshes when local persistence is supported.
+- PDF export produces a valid, usable document.
+- Exported PDFs are suitable for import into GoodNotes.
+- Implemented controls perform real actions.
+- Important errors are handled gracefully.
+- Available build checks and tests pass.
+
+Do not leave unfinished TODOs for essential functionality.
+
+Do not replace functional code with mockups, static screenshots, or fake data.
+
+Do not claim that TTF/OTF generation, cloud synchronization, authentication, or any other advanced capability works unless it has actually been implemented and tested.
+
+20. Final Instructions
+
+Start by inspecting the existing project and its current code.
+
+Then replace the old application implementation and build the new Scriptly Studio application directly in the project.
+
+Make reasonable technical decisions independently. Do not stop after creating a plan or a visual mockup.
+
+Prioritize a complete, functional, polished result.
+
+When finished, provide a concise report containing:
+
+1. What old code and components were replaced.
+2. Which new files and major components were created.
+3. Which features are fully implemented.
+4. Which features are only partially implemented and why.
+5. Which dependencies were added or changed.
+6. The commands needed to start the application.
+7. The build and test results.
+8. Any remaining limitations.
+
+Begin by inspecting the existing project, then replace the old implementation and build the new application. The user-facing website must be in German, even though this prompt and the internal code may be in English.

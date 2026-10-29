@@ -1,0 +1,57 @@
+export const settingsText = {
+  eyebrow: "DEIN STUDIO, DEINE REGELN",
+  title: "Einstellungen",
+  subtitle: "Mach es dir gemütlich. Dein Atelier passt sich dir an.",
+  appearance: "Deine Arbeitsumgebung",
+  profile: "Ein bisschen persönlicher",
+  profileDescription: "Dein Name erscheint nur in deiner lokalen Begrüßung.",
+  name: "Wie dürfen wir dich nennen?",
+  namePlaceholder: "Dein Vorname",
+  theme: "Darstellung",
+  light: "Hell",
+  dark: "Dunkel",
+  accent: "Akzentfarbe",
+  customAccent: "Eigene Akzentfarbe",
+  density: "Abstand der Oberfläche",
+  comfortable: "Entspannt",
+  compact: "Kompakt",
+  sidebar: "Seitenleiste standardmäßig einklappen",
+  start: "Bevorzugte Startansicht",
+  shortcuts: "Tastenkürzel im Editor",
+  defaults: "Dein nächstes Dokument",
+  defaultsDescription:
+    "Diese Einstellungen gelten für neu angelegte Dokumente. Bestehende Seiten bleiben unverändert.",
+  font: "Standardschrift",
+  fontExample: "Caveat · Beispielhandschrift",
+  interfaceFont: "Manrope · Druckschrift",
+  size: "Schriftgröße (px)",
+  color: "Textfarbe",
+  lineHeight: "Zeilenabstand",
+  privacyTitle: "Deine Arbeit bleibt bei dir",
+  privacy:
+    "Scriptly Studio speichert deine Dokumente, Schriften und Vorlagen lokal in diesem Browser. Es gibt keine Konten und keine Cloud-Synchronisierung. Andere Geräte oder Browser sehen diese Daten nicht. Werden die Browserdaten gelöscht, geht auch deine Arbeit verloren.",
+  backup: "Sicherung herunterladen",
+  restore: "Sicherung wiederherstellen",
+  restoring: "Wiederherstellung läuft …",
+  backupDescription:
+    "Eine Sicherung enthält alle Dokumente, Zeichnungen und Papiervorlagen. Bewahre sie außerhalb dieses Browsers auf.",
+  backupSuccess: "Deine Sicherung wurde heruntergeladen.",
+  restoreSuccess: "Deine Sicherung wurde wiederhergestellt.",
+  invalidBackup:
+    "Diese Datei ist keine gültige Scriptly-Sicherung oder enthält ungültige Daten.",
+  largeBackup: "Die Sicherungsdatei darf höchstens 30 MB groß sein.",
+  restoreConfirm:
+    "Die Sicherung ersetzt alle lokalen Dokumente, Schriften und Vorlagen in diesem Browser. Bitte sichere vorher deinen aktuellen Stand. Wirklich wiederherstellen?",
+  storage: "Browserspeicher",
+  storageUnavailable: "Dein Browser kann die Speicherbelegung nicht anzeigen.",
+  persist: "Dauerhafte Speicherung anfragen",
+  persistGranted:
+    "Der Browser schützt deine gespeicherten Daten vor automatischer Speicherbereinigung. Manuelles Löschen bleibt möglich.",
+  persistDenied:
+    "Der Browser hat dauerhafte Speicherung nicht zugesagt. Regelmäßige Sicherungen bleiben wichtig.",
+  reset: "Standardeinstellungen wiederherstellen",
+  resetConfirm:
+    "Darstellung und Dokumentstandards zurücksetzen? Deine Dokumente, Schriften und Vorlagen bleiben erhalten.",
+  resetSuccess: "Standardeinstellungen wiederhergestellt.",
+  localOnly: "Nur lokal · kein Cloud-Konto",
+};
