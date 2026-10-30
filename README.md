@@ -1,5 +1,5 @@
 # Scriptly Studio
-
+ 
 Ein deutschsprachiges, lokal speicherndes Papier- und Handschriftatelier. React 19, TypeScript und Vite; die vorhandene Express/tRPC/Drizzle-Infrastruktur bleibt als kompatible Grundlage für spätere Serverfunktionen erhalten, wird von der Anwendung jedoch nicht benötigt. Es gibt keine Anmeldung oder vorgetäuschte Cloud-Synchronisierung.
 
 ## Starten
