@@ -192,7 +192,7 @@ export default function DocumentComposer() {
         <span className="composer-mark">
           <Sparkles size={19} />
         </span>
-        <p className="eyebrow">DEIN TEXT WIRD ZUM BLATT</p>
+        <p className="eyebrow">Dein Text wird zum Blatt</p>
         <h1>
           Was möchtest du
           <br />

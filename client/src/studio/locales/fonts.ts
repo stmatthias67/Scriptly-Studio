@@ -1,5 +1,5 @@
 export const fontTexts = {
-  galleryEyebrow: "DEINE HANDSCHRIFTEN",
+  galleryEyebrow: "Deine Handschriften",
   galleryTitle: "Meine Schriften",
   galleryDescription:
     "Deine gezeichneten Buchstaben bleiben lokal in diesem Atelier gespeichert.",
@@ -30,8 +30,8 @@ export const fontTexts = {
     "Vielleicht wurde sie in einem anderen Tab gelöscht.",
   backToFonts: "Zur Schriftübersicht",
   loadingNew: "Deine neue Schrift wird vorbereitet …",
-  studioEyebrow: "SCHRIFTATELIER",
-  studioTitle: "Deine Handschrift, Zeichen für Zeichen.",
+  studioEyebrow: "Schriftatelier",
+  studioTitle: "Deine Handschrift, Zeichen für Zeichen",
   studioDescription:
     "Zeichne mit Maus, Finger oder Stift. Jede Änderung wird lokal gespeichert.",
   characterGroups: "Zeichengruppen",

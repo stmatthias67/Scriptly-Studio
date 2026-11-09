@@ -55,7 +55,7 @@
   width: fit-content;
   color: #50635c;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 .editor-back:hover {
@@ -124,10 +124,9 @@
 .tool-group > span {
   color: #7c8983;
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.08em;
   margin-right: 3px;
-  text-transform: uppercase;
 }
 .tool-group .icon-btn,
 .format-toggles .icon-btn,
@@ -284,7 +283,7 @@
 }
 .page-thumb.active .page-thumb-main > span {
   color: var(--editor-accent);
-  font-weight: 800;
+  font-weight: 600;
 }
 .page-actions {
   justify-content: flex-end;
@@ -459,7 +458,7 @@
   min-width: 0;
   color: #54655d;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .studio-editor .field > span {
   line-height: 1.1;
@@ -513,7 +512,7 @@
 }
 .glyph-warning strong {
   color: #5d4716;
-  font-weight: 800;
+  font-weight: 600;
 }
 .editor-check {
   display: flex;
@@ -521,7 +520,7 @@
   gap: 7px;
   color: #455b50;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .editor-check input {
   accent-color: var(--editor-accent);
@@ -554,9 +553,8 @@
   margin: 5px 0 -3px;
   color: #7b8882;
   font-size: 0.63rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .geometry-rotate {
   grid-column: 1 / -1;
@@ -652,7 +650,7 @@
   padding: 0 4px;
   color: #617168;
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 .export-scope > label:not(.field) {
   display: flex;
