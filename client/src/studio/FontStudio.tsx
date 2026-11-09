@@ -357,25 +357,38 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
     setRedoStack([]);
   }
 
-  function localPoint(
-    event: ReactPointerEvent<SVGSVGElement>
-  ): Point | undefined {
+  function localPoint(sample: {
+    clientX: number;
+    clientY: number;
+    pressure: number;
+  }): Point | undefined {
     const bounds = svgRef.current?.getBoundingClientRect();
     if (!bounds || !bounds.width || !bounds.height) return undefined;
     return {
       x: clamp(
-        ((event.clientX - bounds.left) / bounds.width) * DRAWING_SIZE,
+        ((sample.clientX - bounds.left) / bounds.width) * DRAWING_SIZE,
         0,
         DRAWING_SIZE
       ),
       y: clamp(
-        ((event.clientY - bounds.top) / bounds.height) * DRAWING_SIZE,
+        ((sample.clientY - bounds.top) / bounds.height) * DRAWING_SIZE,
         0,
         DRAWING_SIZE
       ),
-      pressure: event.pressure > 0 ? event.pressure : undefined,
+      pressure: sample.pressure > 0 ? sample.pressure : undefined,
     };
   }
+
+  // Pen and touch drags must never scroll the page under the canvas, otherwise
+  // the stroke lands where the page was before it moved.
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || svg.dataset.touchGuard) return;
+    svg.dataset.touchGuard = "true";
+    const block = (event: TouchEvent) => event.preventDefault();
+    svg.addEventListener("touchstart", block, { passive: false });
+    svg.addEventListener("touchmove", block, { passive: false });
+  });
 
   function eraseAt(point: Point) {
     const radius = Math.max(14, penWidth * 1.75);
@@ -418,24 +431,38 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
 
   function moveDrawing(event: ReactPointerEvent<SVGSVGElement>) {
     if (activePointer.current !== event.pointerId) return;
-    const point = localPoint(event);
-    if (!point) return;
     event.preventDefault();
+    // Pens report many samples per frame; use all of them so fast strokes keep
+    // their shape instead of being drawn as straight segments.
+    const native = event.nativeEvent;
+    const coalesced =
+      typeof native.getCoalescedEvents === "function"
+        ? native.getCoalescedEvents()
+        : [];
+    const samples = coalesced.length ? coalesced : [native];
+    const points = samples
+      .map(sample => localPoint(sample))
+      .filter((point): point is Point => Boolean(point));
+    if (!points.length) return;
     if (tool === "eraser") {
-      eraseAt(point);
+      points.forEach(eraseAt);
       return;
     }
     const next = cloneStrokes(strokesRef.current);
     const activeStroke = next[next.length - 1];
     if (!activeStroke) return;
-    const previous = activeStroke.points[activeStroke.points.length - 1];
-    if (
-      previous &&
-      Math.hypot(previous.x - point.x, previous.y - point.y) < 0.5
-    )
-      return;
-    activeStroke.points.push(point);
-    replaceStrokes(next);
+    let changed = false;
+    for (const point of points) {
+      const previous = activeStroke.points[activeStroke.points.length - 1];
+      if (
+        previous &&
+        Math.hypot(previous.x - point.x, previous.y - point.y) < 0.5
+      )
+        continue;
+      activeStroke.points.push(point);
+      changed = true;
+    }
+    if (changed) replaceStrokes(next);
   }
 
   function endDrawing(event: ReactPointerEvent<SVGSVGElement>) {
