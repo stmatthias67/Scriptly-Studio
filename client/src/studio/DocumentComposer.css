@@ -17,7 +17,7 @@
   border: 0;
   background: none;
   color: #63736b;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .composer-back:hover {
@@ -29,7 +29,7 @@
   gap: 9px;
   color: #9aa39d;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 .composer-step span:not(.step-active):not(:last-child) {
   width: 34px;
@@ -95,9 +95,8 @@
 .composer-field > span:first-child {
   color: #53635c;
   font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .composer-field small {
   color: #8b958f;

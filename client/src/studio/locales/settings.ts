@@ -1,5 +1,5 @@
 export const settingsText = {
-  eyebrow: "DEIN STUDIO, DEINE REGELN",
+  eyebrow: "Dein Studio, deine Regeln",
   title: "Einstellungen",
   subtitle: "Mach es dir gemütlich. Dein Atelier passt sich dir an.",
   appearance: "Deine Arbeitsumgebung",

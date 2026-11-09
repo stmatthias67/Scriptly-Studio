@@ -195,7 +195,7 @@ export default function Documents() {
     <div className="content-width library-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">GEDANKEN ZUM WIEDERFINDEN</p>
+          <p className="eyebrow">Gedanken zum Wiederfinden</p>
           <h1>{de.documents}</h1>
           <p className="muted">
             Deine Ideen, Notizen und kleinen Meisterwerke. Alles an einem Ort.

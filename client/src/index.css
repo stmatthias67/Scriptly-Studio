@@ -17,6 +17,9 @@
   --color-ring: var(--accent);
   --radius: 12px;
 }
+em {
+  font-style: normal;
+}
 :root {
   --bg: #fbfaf7;
   --surface: #ffffff;
@@ -162,9 +165,9 @@ select {
   cursor: pointer;
 }
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 1.9px;
-  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  font-weight: 600;
   color: var(--muted);
   margin-bottom: 10px;
 }
@@ -342,15 +345,15 @@ select {
   display: block;
   font-family: "Manrope", sans-serif;
   font-size: 8px;
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   margin-top: 6px;
   margin-left: 2px;
   color: var(--muted);
 }
 .nav-eyebrow {
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 1.9px;
+  letter-spacing: 0.2px;
   color: var(--muted);
   margin: 0 13px 13px;
 }
@@ -379,7 +382,7 @@ select {
 .nav-link.active {
   background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 :root[data-theme="dark"] .nav-link.active {
   color: #c1d6c5;
@@ -586,8 +589,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 7px;
-  letter-spacing: 1.3px;
+  font-size: 11px;
+  letter-spacing: 0.2px;
   font-weight: 600;
   color: #62806b;
   border: 1px solid #d5ddcf;
@@ -610,6 +613,8 @@ select {
 }
 .hero-copy h2 em {
   font-weight: 400;
+  font-style: normal;
+  color: var(--accent);
 }
 .hero-copy p {
   font-size: 10px;
@@ -683,7 +688,7 @@ select {
 .sample-label {
   display: block;
   font-size: 6px;
-  letter-spacing: 1.4px;
+  letter-spacing: 0.2px;
   position: absolute;
   bottom: 15px;
   left: 23px;
@@ -1216,7 +1221,7 @@ select {
   border-radius: 15px;
   border: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: 0 20px 70px #00000030;
+  box-shadow: 0 12px 40px #00000022;
   padding: 24px;
 }
 .modal-content.wide {
@@ -1833,8 +1838,8 @@ select {
     max-width: 250px;
   }
   .hero-pill {
-    font-size: 6px;
-    letter-spacing: 0.9px;
+    font-size: 10px;
+    letter-spacing: 0.2px;
   }
   .hero-papers {
     width: 31%;
@@ -1985,8 +1990,8 @@ select {
     height: 334px;
   }
   .hero-pill {
-    font-size: 5.7px;
-    letter-spacing: 0.65px;
+    font-size: 10px;
+    letter-spacing: 0.2px;
   }
   .document-preview {
     height: 158px;

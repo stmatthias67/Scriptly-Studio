@@ -72,7 +72,7 @@ export default function Dashboard() {
           <p className="eyebrow">{c.creativeSpace}</p>
           <h1>
             {settings.name
-              ? `Schön, dass du da bist, ${settings.name}.`
+              ? `Schön, dass du da bist, ${settings.name}`
               : `${de.hello}.`}
           </h1>
           <p className="muted">{c.thoughtStart}</p>

@@ -1,8 +1,8 @@
 import type { PageFormat, PaperType } from "../types";
 
 export const paperLocale = {
-  eyebrow: "PAPIERATELIER",
-  title: "Gestalte dein Papier.",
+  eyebrow: "Papieratelier",
+  title: "Gestalte dein Papier",
   description:
     "Stelle Format, Raster und Details direkt am Blatt ein. Jede Änderung bleibt in der Vorschau sichtbar.",
   editTemplate: "Vorlage bearbeiten",
@@ -63,7 +63,7 @@ export const paperLocale = {
   textureHint: "Eine dezente, im Export sichtbare Papierstruktur.",
   pageNumbers: "Seitenzahlen",
   pageNumbersHint: "Setzt die Seitennummer unten auf jede Dokumentseite.",
-  galleryEyebrow: "VORLAGENSAMMLUNG",
+  galleryEyebrow: "Vorlagensammlung",
   galleryTitle: "Papier, das zu dir passt.",
   galleryDescription:
     "Eigene Kombinationen, zuverlässige Startvorlagen und dein Lieblingspapier an einem Ort.",

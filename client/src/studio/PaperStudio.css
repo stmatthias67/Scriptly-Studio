@@ -158,8 +158,8 @@
   gap: 6px;
   color: var(--paper-sage);
   font-size: 0.69rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .paper-section-heading p {
   margin: 6px 0 0;
@@ -503,7 +503,7 @@
   background: #fffefa;
   color: #536158;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .templates-favorite-filter input {
@@ -674,7 +674,7 @@
   gap: 7px;
   color: #45534b;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .paper-modal-field select {
   min-height: 39px;

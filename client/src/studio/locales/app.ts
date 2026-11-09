@@ -7,7 +7,7 @@ export const de = {
   paper: "Papierstudio",
   templates: "Vorlagen",
   settings: "Einstellungen",
-  workspace: "DEIN ATELIER",
+  workspace: "Dein Atelier",
   collection: "SAMMLUNG",
   local: "Lokal auf diesem Gerät",
   saved: "Alle Änderungen gespeichert",
@@ -16,7 +16,7 @@ export const de = {
   loading: "Dein Atelier wird geöffnet …",
   newDocument: "Neues Dokument",
   hello: "Schön, dass du da bist",
-  heroTitle: "Deine Gedanken.\nDeine Handschrift.",
+  heroTitle: "Deine Gedanken.\nDeine Handschrift",
   heroDescription:
     "Ein Ort für alles, was deine persönliche Note verdient. Gestalte deine Schrift, finde dein Papier und bring deine Ideen aufs Blatt.",
   recent: "Zuletzt bearbeitet",
@@ -72,7 +72,7 @@ export const de = {
   menu: "Navigation öffnen",
   theme: "Darstellung wechseln",
   privacy: "Deine Daten bleiben bei dir.",
-  example: "SCHRIFTPROBE · BEISPIEL",
+  example: "Schriftprobe · Beispiel",
   helpTitle: "Dein persönliches Papieratelier",
   helpSteps: [
     [
@@ -94,11 +94,11 @@ export const de = {
   ],
 };
 export const appCopy = {
-  creativeSpace: "DEIN KREATIVER FREIRAUM",
+  creativeSpace: "Dein kreativer Freiraum",
   thoughtStart: "Ein neuer Gedanke ist immer ein guter Anfang.",
-  heroEyebrow: "DEIN PERSÖNLICHES PAPIERATELIER",
+  heroEyebrow: "Dein persönliches Papieratelier",
   heroLineOne: "Deine Gedanken.",
-  heroLineTwo: "Deine Handschrift.",
+  heroLineTwo: "Deine Handschrift",
   heroFootnote: "Ganz persönlich. Ganz bei dir.",
   forIdeas: "Für deine Ideen.",
   newPage: "Eine neue Seite",
