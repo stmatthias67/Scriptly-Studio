@@ -13,7 +13,7 @@ import type {
   GetUserInfoResponse,
   GetUserInfoWithJwtRequest,
   GetUserInfoWithJwtResponse,
-} from "./types/manusTypes";
+} from "./types/platformTypes";
 // Utility function
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0;
@@ -33,7 +33,7 @@ class OAuthService {
     console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     if (!ENV.oAuthServerUrl) {
       console.error(
-        "[OAuth] ERROR: MANUS_OAUTH_API_URL is not configured! Set MANUS_OAUTH_API_URL environment variable."
+        "[OAuth] ERROR: SCRIPTLY_OAUTH_API_URL is not configured! Set SCRIPTLY_OAUTH_API_URL environment variable."
       );
     }
   }
@@ -155,12 +155,12 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
-    if (!secret) throw new Error("MANUS_JWT_SECRET is unavailable");
+    if (!secret) throw new Error("SCRIPTLY_JWT_SECRET is unavailable");
     return new TextEncoder().encode(secret);
   }
 
   /**
-   * Create a session token for a Manus user openId
+   * Create a session token for a user openId
    * @example
    * const sessionToken = await sdk.createSessionToken(userInfo.openId);
    */
@@ -341,7 +341,7 @@ function buildCronUser(
   return {
     id: -1,
     openId: userInfo.openId,
-    name: userInfo.name || "Manus Scheduled Task",
+    name: userInfo.name || "Scheduled Task",
     email: null,
     loginMethod: null,
     role: "user",

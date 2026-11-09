@@ -213,14 +213,14 @@ const normalizeToolChoice = (
 };
 
 const platformApiBase = () => {
-  if (!ENV.forgeApiUrl.trim()) throw new Error("MANUS_API_URL is not configured");
+  if (!ENV.forgeApiUrl.trim()) throw new Error("SCRIPTLY_API_URL is not configured");
   return ENV.forgeApiUrl.replace(/\/$/, "");
 };
 const resolveApiUrl = () => `${platformApiBase()}/v1/chat/completions`;
 
 const assertApiKey = () => {
   if (!ENV.forgeApiKey) {
-    throw new Error("MANUS_API_KEY is not configured");
+    throw new Error("SCRIPTLY_API_KEY is not configured");
   }
 };
 
