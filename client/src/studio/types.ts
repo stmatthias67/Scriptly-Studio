@@ -56,6 +56,8 @@ export interface PageElement {
   paragraphSpacing: number;
   src?: string;
   checked?: boolean;
+  /** Fixed elements stay where they are and cannot be dragged or resized. */
+  locked?: boolean;
 }
 export interface StudioPage {
   id: string;

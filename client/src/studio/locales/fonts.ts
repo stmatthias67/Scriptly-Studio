@@ -79,7 +79,7 @@ export const fontTexts = {
   smoothness: "Glättung",
   variation: "Variationsanteil",
   variationDescription:
-    "Die Vorschau verteilt vorhandene Zeichenvarianten ab diesem Anteil gleichbleibend. Eine automatische OpenType-Auswahl ist nicht Teil der OTF-Datei.",
+    "Hast du für ein Zeichen mehrere Varianten gezeichnet, wechseln Schriftprobe, Dokumente und Export sie automatisch ab. Die OTF-Datei enthält nur die erste Variante.",
   preview: "Schriftprobe",
   previewText: "Vorschautext",
   previewDefault:

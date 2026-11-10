@@ -30,6 +30,8 @@ import {
   ImagePlus,
   Italic,
   List,
+  Lock,
+  LockOpen,
   Maximize2,
   Minus,
   Move,
@@ -64,7 +66,7 @@ import {
   type StudioDocument,
   type StudioPage,
 } from "./types";
-import { loadFonts } from "./font-engine";
+import { loadFontVariants } from "./font-engine";
 import {
   editorText as t,
   elementLabels,
@@ -179,7 +181,7 @@ export default function Editor({ documentId }: { documentId: string }) {
   const [, setFontRevision] = useState(0);
   useEffect(() => {
     let active = true;
-    void loadFonts(data.fonts)
+    void loadFontVariants(data.fonts)
       .then(() => window.document.fonts?.load('400 28px "Caveat"'))
       .catch(() => {})
       .then(() => {
@@ -533,6 +535,10 @@ export default function Editor({ documentId }: { documentId: string }) {
     mode: Gesture["mode"]
   ) => {
     event.stopPropagation();
+    if (element.locked) {
+      setSelectedElementId(element.id);
+      return;
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
     setSelectedElementId(element.id);
     gestureRef.current = {
@@ -957,7 +963,7 @@ export default function Editor({ documentId }: { documentId: string }) {
                   {currentPage.elements.map(element => (
                     <div
                       key={element.id}
-                      className={`canvas-element ${selectedElementId === element.id ? "selected" : ""} type-${element.type}`}
+                      className={`canvas-element ${selectedElementId === element.id ? "selected" : ""} type-${element.type} ${element.locked ? "locked" : ""}`}
                       style={{
                         left: `${(element.x / pageBase.width) * 100}%`,
                         top: `${(element.y / pageBase.height) * 100}%`,
@@ -979,12 +985,16 @@ export default function Editor({ documentId }: { documentId: string }) {
                       aria-label={`${elementLabels[element.type]} ${t.selected}`}
                     >
                       <span className="canvas-element-label">
-                        <Move size={11} />
+                        {element.locked ? (
+                          <Lock size={11} />
+                        ) : (
+                          <Move size={11} />
+                        )}
                         {element.type === "text"
                           ? element.text.slice(0, 34) || t.text
                           : elementLabels[element.type]}
                       </span>
-                      {selectedElementId === element.id && (
+                      {selectedElementId === element.id && !element.locked && (
                         <button
                           type="button"
                           className="resize-handle"
@@ -1027,6 +1037,27 @@ export default function Editor({ documentId }: { documentId: string }) {
               </div>
               {selectedElement && (
                 <div className="properties-actions">
+                  <button
+                    className={`icon-btn ${selectedElement.locked ? "active" : ""}`}
+                    onClick={() =>
+                      updateElement(selectedElement.id, {
+                        locked: !selectedElement.locked,
+                      })
+                    }
+                    title={
+                      selectedElement.locked ? t.unlockElement : t.lockElement
+                    }
+                    aria-label={
+                      selectedElement.locked ? t.unlockElement : t.lockElement
+                    }
+                    aria-pressed={!!selectedElement.locked}
+                  >
+                    {selectedElement.locked ? (
+                      <Lock size={16} />
+                    ) : (
+                      <LockOpen size={16} />
+                    )}
+                  </button>
                   <button
                     className="icon-btn"
                     onClick={duplicateElement}
@@ -1298,7 +1329,10 @@ export default function Editor({ documentId }: { documentId: string }) {
                     </>
                   )}
                 </div>
-                <div className="geometry-grid">
+                <fieldset
+                  className="geometry-grid"
+                  disabled={!!selectedElement.locked}
+                >
                   <span className="field-label">{t.position}</span>
                   <label className="field">
                     <span>{t.x}</span>
@@ -1394,7 +1428,7 @@ export default function Editor({ documentId }: { documentId: string }) {
                       <em>°</em>
                     </span>
                   </label>
-                </div>
+                </fieldset>
               </div>
             )}
           </section>

@@ -6,6 +6,8 @@ import {
   getFontFamily,
   getFontMetrics,
   loadFont,
+  variantFontCount,
+  variantForOccurrence,
 } from "./font-engine";
 import type { FontProject } from "./types";
 
@@ -164,5 +166,31 @@ describe("font-engine", () => {
     const before = fontFingerprint(project);
     project.glyphs.A.variants[1][0].points[1].x = 270;
     expect(fontFingerprint(project)).not.toBe(before);
+  });
+
+  it("cycles repeated letters through every drawn variant and skips empty ones", () => {
+    const ink = [
+      {
+        width: 4,
+        points: [
+          { x: 10, y: 10 },
+          { x: 20, y: 20 },
+        ],
+      },
+    ];
+    const project = baseProject({
+      A: { variants: [ink, ink, ink] },
+      B: { variants: [ink, [], ink] },
+      C: { variants: [ink] },
+    });
+    const pick = (character: string) =>
+      [0, 1, 2, 3].map(n => variantForOccurrence(project, character, n));
+    expect(pick("A")).toEqual([0, 1, 2, 0]);
+    expect(pick("B")).toEqual([0, 2, 0, 2]);
+    expect(pick("C")).toEqual([0, 0, 0, 0]);
+    expect(pick("Z")).toEqual([0, 0, 0, 0]);
+    expect(variantForOccurrence(project, "A", 0, 2)).toBe(2);
+    expect(variantFontCount(project)).toBe(3);
+    expect(variantFontCount(baseProject({ C: { variants: [ink] } }))).toBe(1);
   });
 });

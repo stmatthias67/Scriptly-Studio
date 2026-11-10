@@ -28,7 +28,12 @@ import {
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import type { FontProject, FontSettings, Glyph, Point, Stroke } from "./types";
-import { buildFont, getFontFamily, loadFont } from "./font-engine";
+import {
+  buildFont,
+  getFontFamily,
+  loadFont,
+  variantForOccurrence,
+} from "./font-engine";
 import { Modal } from "./components";
 import { useStudio } from "./store";
 import {
@@ -107,30 +112,6 @@ function safeFileName(value: string) {
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "meine-handschrift"
   );
-}
-
-function previewVariantFor(
-  project: FontProject,
-  character: string,
-  index: number,
-  baseVariant: number
-) {
-  const variants = getVariants(project.glyphs[character]);
-  const available = variants
-    .map((strokes, variant) => (containsInk(strokes) ? variant : -1))
-    .filter(variant => variant >= 0);
-  if (!available.length) return baseVariant;
-  const preferred = available.includes(baseVariant)
-    ? baseVariant
-    : available[0];
-  if (project.settings.variation <= 0 || available.length < 2) return preferred;
-  const seed = [...character].reduce(
-    (total, letter) => total + (letter.codePointAt(0) ?? 0),
-    index * 37 + 17
-  );
-  if (seed % 100 >= project.settings.variation) return preferred;
-  const alternatives = available.filter(variant => variant !== preferred);
-  return alternatives[seed % alternatives.length] ?? preferred;
 }
 
 function formatDate(timestamp: number) {
@@ -980,14 +961,6 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
             suffix="%"
             onChange={value => changeSetting("smoothness", value)}
           />
-          <RangeSetting
-            label={t.variation}
-            value={project.settings.variation}
-            min={0}
-            max={100}
-            suffix="%"
-            onChange={value => changeSetting("variation", value)}
-          />
           <p className="font-setting-note">
             <RotateCcw size={14} />
             {t.variationDescription}
@@ -1016,24 +989,29 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
           />
         </label>
         <p className="font-preview-text">
-          {[...previewText].map((character, index) => {
-            const variant = previewVariantFor(
-              project,
-              character,
-              index,
-              activeVariant
-            );
-            const family = previewFamilies[variant] ?? previewFamilies[0];
-            return (
-              <span
-                className="font-preview-letter"
-                key={`${index}-${character}`}
-                style={{ fontFamily: `"${family}", Caveat, cursive` }}
-              >
-                {character}
-              </span>
-            );
-          })}
+          {(() => {
+            const seen = new Map<string, number>();
+            return [...previewText].map((character, index) => {
+              const occurrence = seen.get(character) ?? 0;
+              seen.set(character, occurrence + 1);
+              const variant = variantForOccurrence(
+                project,
+                character,
+                occurrence,
+                activeVariant
+              );
+              const family = previewFamilies[variant] ?? previewFamilies[0];
+              return (
+                <span
+                  className="font-preview-letter"
+                  key={`${index}-${character}`}
+                  style={{ fontFamily: `"${family}", Caveat, cursive` }}
+                >
+                  {character}
+                </span>
+              );
+            });
+          })()}
         </p>
         <div
           className={`font-missing ${previewMissing.length ? "warning" : "ok"}`}

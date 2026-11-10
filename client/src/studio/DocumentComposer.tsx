@@ -67,11 +67,13 @@ function generatedPages(
     if (!visible) {
       element.height = dimensions.height - margin * 1.5;
       element.text = remaining;
+      element.locked = true;
       page.elements.push(element);
       pages.push(page);
       break;
     }
     element.text = visible;
+    element.locked = true;
     page.elements.push(element);
     pages.push(page);
     remaining = split.overflow.trimStart();
