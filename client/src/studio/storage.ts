@@ -85,6 +85,7 @@ const element = z.object({
     .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/)
     .optional(),
   checked: z.boolean().optional(),
+  locked: z.boolean().optional(),
 });
 const stamp = finite.min(0);
 const fontSettings = z.object({

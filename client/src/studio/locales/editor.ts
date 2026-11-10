@@ -67,6 +67,8 @@ export const editorText = {
   y: "Y",
   rotate: "Grad",
   duplicateElement: "Element duplizieren",
+  lockElement: "Auf dem Blatt fixieren",
+  unlockElement: "Fixierung lösen",
   deleteElement: "Element löschen",
   checked: "Erledigt",
   missingGlyphs:

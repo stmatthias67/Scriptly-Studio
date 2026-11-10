@@ -397,3 +397,54 @@ export async function loadFonts(projects: FontProject[]): Promise<void> {
     })
   );
 }
+
+/** Highest number of drawn variants a character can have. */
+export const MAX_FONT_VARIANTS = 3;
+
+/** Indices of the variants of a character that actually contain ink. */
+export function inkedVariants(glyph: Glyph | undefined): number[] {
+  return (glyph?.variants ?? [])
+    .slice(0, MAX_FONT_VARIANTS)
+    .map((strokes, index) =>
+      strokes.some(stroke => stroke.points.length > 0) ? index : -1
+    )
+    .filter(index => index >= 0);
+}
+
+/** Number of variant fonts worth installing for a project (at least one). */
+export function variantFontCount(project: FontProject): number {
+  let count = 1;
+  for (const glyph of Object.values(project.glyphs ?? {})) {
+    const inked = inkedVariants(glyph);
+    if (inked.length) count = Math.max(count, inked[inked.length - 1] + 1);
+  }
+  return Math.min(MAX_FONT_VARIANTS, count);
+}
+
+/**
+ * Picks the variant for the n-th occurrence of a character. Repeated letters cycle
+ * through every drawn variant, so the same letter never looks identical twice in a row.
+ * The choice is deterministic, which keeps preview, editor and export identical.
+ */
+export function variantForOccurrence(
+  project: FontProject | undefined,
+  character: string,
+  occurrence: number,
+  offset = 0
+): number {
+  const inked = inkedVariants(project?.glyphs?.[character]);
+  if (!inked.length) return 0;
+  const start = Math.max(0, inked.indexOf(offset));
+  return inked[(start + occurrence) % inked.length];
+}
+
+/** Installs every drawn variant of each project so documents can alternate between them. */
+export async function loadFontVariants(projects: FontProject[]): Promise<void> {
+  await Promise.all(
+    projects.flatMap(project =>
+      Array.from({ length: variantFontCount(project) }, (_, index) =>
+        loadFont(project, index)
+      )
+    )
+  );
+}

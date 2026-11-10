@@ -5,7 +5,12 @@ import type {
   StudioPage,
 } from "./types";
 import { paperDimensions } from "./types";
-import { getFontFamily, loadFonts } from "./font-engine";
+import {
+  getFontFamily,
+  loadFontVariants,
+  variantFontCount,
+  variantForOccurrence,
+} from "./font-engine";
 
 /** Rasterdichte, auf der alle Dokumentkoordinaten gespeichert werden. */
 export const PX_PER_MM = 96 / 25.4;
@@ -534,11 +539,60 @@ function textLines(
   return output;
 }
 
+/**
+ * Draws one line letter by letter so every character can use its own drawn variant.
+ * Widths come from the variant actually used; like fillText's maxWidth, a line that
+ * ends up wider than the block is compressed horizontally instead of overflowing.
+ */
+function drawVariantLine(
+  ctx: CanvasRenderingContext2D,
+  element: PageElement,
+  project: FontProject,
+  text: string,
+  width: number,
+  y: number,
+  occurrences: Map<string, number>
+): void {
+  const glyphs = Array.from(text).map(character => {
+    const seen = occurrences.get(character) ?? 0;
+    if (!/\s/.test(character)) occurrences.set(character, seen + 1);
+    const variant = variantForOccurrence(project, character, seen);
+    ctx.font = fontStyle(element, getFontFamily(project.id, variant));
+    return {
+      character,
+      font: ctx.font,
+      advance: ctx.measureText(character).width,
+    };
+  });
+  const total = glyphs.reduce((sum, glyph) => sum + glyph.advance, 0);
+  const squeeze = total > width && total > 0 ? width / total : 1;
+  const used = total * squeeze;
+  let x =
+    element.align === "center"
+      ? (width - used) / 2
+      : element.align === "right"
+        ? width - used
+        : 0;
+  ctx.textAlign = "left";
+  for (const glyph of glyphs) {
+    ctx.font = glyph.font;
+    ctx.save();
+    ctx.translate(x, y);
+    if (squeeze !== 1) ctx.scale(squeeze, 1);
+    ctx.fillText(glyph.character, 0, 0);
+    ctx.restore();
+    x += glyph.advance * squeeze;
+  }
+}
+
 function drawTextElement(
   ctx: CanvasRenderingContext2D,
   element: PageElement,
-  family: string
+  family: string,
+  project?: FontProject
 ): void {
+  const alternates = Boolean(project && variantFontCount(project) > 1);
+  const occurrences = new Map<string, number>();
   const width = Math.max(1, element.width);
   const lineHeight = Math.max(
     1,
@@ -566,7 +620,13 @@ function drawTextElement(
     element.paragraphSpacing
   )) {
     if (y + lineHeight > element.height + 0.5) break;
-    ctx.fillText(line.text, anchor, y, width);
+    if (alternates && project) {
+      drawVariantLine(ctx, element, project, line.text, width, y, occurrences);
+      ctx.font = fontStyle(element, family);
+      ctx.textAlign = element.align;
+    } else {
+      ctx.fillText(line.text, anchor, y, width);
+    }
     y += lineHeight + (line.paragraphEnd ? element.paragraphSpacing : 0);
   }
   ctx.restore();
@@ -686,7 +746,12 @@ async function drawElement(
   fonts: FontProject[]
 ): Promise<void> {
   if (element.type === "text") {
-    drawTextElement(ctx, element, getFontFamily(element.fontId));
+    drawTextElement(
+      ctx,
+      element,
+      getFontFamily(element.fontId),
+      fonts.find(font => font.id === element.fontId)
+    );
     return;
   }
   if (element.type === "image") {
@@ -735,7 +800,7 @@ export async function renderPage(
       "Die gewählte Auflösung ist für diese Papiergröße zu hoch."
     );
   }
-  await loadFonts(fonts);
+  await loadFontVariants(fonts);
   if (document.fonts)
     await Promise.all([
       document.fonts.load('400 28px "Caveat"'),
