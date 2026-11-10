@@ -1,7 +1,7 @@
 /**
  * Quick example (matches curl usage):
  *   await callDataApi("Youtube/search", {
- *     query: { gl: "US", hl: "en", q: "manus" },
+ *     query: { gl: "US", hl: "en", q: "scriptly" },
  *   })
  */
 import { ENV } from "./env";
@@ -18,10 +18,10 @@ export async function callDataApi(
   options: DataApiCallOptions = {}
 ): Promise<unknown> {
   if (!ENV.forgeApiUrl) {
-    throw new Error("MANUS_API_URL is not configured");
+    throw new Error("SCRIPTLY_API_URL is not configured");
   }
   if (!ENV.forgeApiKey) {
-    throw new Error("MANUS_API_KEY is not configured");
+    throw new Error("SCRIPTLY_API_KEY is not configured");
   }
 
   // Build the full URL by appending the service path to the base URL

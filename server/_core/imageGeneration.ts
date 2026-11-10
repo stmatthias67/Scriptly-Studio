@@ -44,10 +44,10 @@ export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResponse> {
   if (!ENV.forgeApiUrl) {
-    throw new Error("MANUS_API_URL is not configured");
+    throw new Error("SCRIPTLY_API_URL is not configured");
   }
   if (!ENV.forgeApiKey) {
-    throw new Error("MANUS_API_KEY is not configured");
+    throw new Error("SCRIPTLY_API_KEY is not configured");
   }
 
   // Build the full URL by appending the service path to the base URL
@@ -130,10 +130,10 @@ export type ListImageModelsResponse = {
  */
 export async function listImageModels(): Promise<ListImageModelsResponse> {
   if (!ENV.forgeApiUrl) {
-    throw new Error("MANUS_API_URL is not configured");
+    throw new Error("SCRIPTLY_API_URL is not configured");
   }
   if (!ENV.forgeApiKey) {
-    throw new Error("MANUS_API_KEY is not configured");
+    throw new Error("SCRIPTLY_API_KEY is not configured");
   }
 
   const baseUrl = ENV.forgeApiUrl.endsWith("/")
