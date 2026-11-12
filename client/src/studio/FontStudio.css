@@ -344,6 +344,9 @@
 }
 
 .font-canvas-wrap {
+  margin: 0 auto;
+  max-width: 440px;
+  width: 100%;
   background: #fffefa;
   border: 1px solid #ddd9cf;
   border-radius: 11px;
@@ -373,21 +376,76 @@
   stroke-dasharray: 5 6;
   stroke-width: 1;
 }
-.font-guides .baseline {
-  stroke: #93aa9e;
-  stroke-dasharray: none;
-  stroke-width: 1.4;
+.font-guide-band {
+  fill: rgba(49, 92, 76, 0.045);
 }
-.font-stroke {
+.font-guide text {
+  fill: #9aa69f;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  user-select: none;
+}
+.font-guide-base line {
+  stroke: #7f998c;
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+}
+.font-guide-base text {
+  fill: #6f8a7d;
+}
+.font-template {
+  fill: rgba(38, 60, 51, 0.07);
+  font-family: "Caveat", cursive;
+  pointer-events: none;
+  user-select: none;
+}
+.font-stroke,
+.font-stroke line {
   fill: none;
   pointer-events: none;
-  stroke: #263c33;
+  stroke: #1f2f29;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.font-canvas circle.font-stroke {
-  fill: #263c33;
-  stroke: none;
+.font-stroke-dot {
+  fill: #1f2f29;
+  pointer-events: none;
+}
+.font-eraser-ring {
+  fill: rgba(176, 72, 60, 0.08);
+  pointer-events: none;
+  stroke: #b0483c;
+  stroke-dasharray: 3 3;
+  stroke-width: 1.2;
+}
+.font-width-presets {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.font-width-presets button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.font-width-presets button i {
+  display: block;
+  width: 16px;
+  border-radius: 4px;
+  background: currentColor;
+}
+.font-width-presets button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .font-empty-drawing {

@@ -12,6 +12,7 @@ import {
   basePaper,
   builtInTemplates,
   createPage,
+  currentTemplates,
   defaultFontSettings,
   defaultSettings,
   uid,
@@ -60,8 +61,12 @@ function loadSettings(): StudioSettings {
     return {
       ...structuredClone(defaultSettings),
       ...raw,
-      defaultPaper: { ...basePaper, ...raw.defaultPaper },
+      defaultPaper:
+        raw.defaultPaper?.type === "image" && raw.defaultPaper?.background
+          ? { ...basePaper, ...raw.defaultPaper }
+          : structuredClone(basePaper),
       theme: raw.theme === "dark" ? "dark" : "light",
+      plan: ["free", "pro", "lifetime"].includes(raw.plan) ? raw.plan : "free",
       accent: /^#[0-9a-f]{6}$/i.test(raw.accent)
         ? raw.accent
         : defaultSettings.accent,
@@ -90,8 +95,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       .then(saved => {
         if (live) {
           if (saved) {
-            dataRef.current = saved;
-            setData(saved);
+            // Old built-in and hand-built templates are retired; only the standard
+            // sheets and uploaded sheets remain.
+            const current = {
+              ...saved,
+              templates: currentTemplates(saved.templates),
+            };
+            dataRef.current = current;
+            setData(current);
           }
           setLoaded(true);
         }
@@ -242,14 +253,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     return doc;
   }
   function createFont(name = c.defaultFontName) {
-    const font: FontProject = {
-      id: uid(),
-      name,
-      glyphs: {},
-      settings: { ...defaultFontSettings },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    const font = newFontProject(name);
     mutate(d => ({ ...d, fonts: [font, ...d.fonts] }));
     return font;
   }
@@ -276,7 +280,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   function deleteTemplate(id: string) {
     mutate(d => ({ ...d, templates: d.templates.filter(t => t.id !== id) }));
   }
-  async function replaceData(next: StudioData) {
+  async function replaceData(restored: StudioData) {
+    const next = {
+      ...restored,
+      templates: currentTemplates(restored.templates),
+    };
     if (timer.current) clearTimeout(timer.current);
     await queue.current.catch(() => {});
     await writeWorkspace(next);
@@ -323,3 +331,29 @@ export const saveStatusLabels: Record<SaveStatus, string> = {
   saving: de.saving,
   error: de.saveError,
 };
+
+/** A fresh, unsaved font project. It is only stored once someone actually edits it. */
+export function newFontProject(name = c.defaultFontName): FontProject {
+  return {
+    id: uid(),
+    name,
+    glyphs: {},
+    settings: { ...defaultFontSettings },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+/** True once a draft font holds anything worth keeping: ink, a new name or changed settings. */
+export function fontHasEdits(font: FontProject): boolean {
+  const hasInk = Object.values(font.glyphs ?? {}).some(glyph =>
+    glyph?.variants?.some(variant =>
+      variant.some(stroke => stroke.points.length > 0)
+    )
+  );
+  return (
+    hasInk ||
+    font.name.trim() !== c.defaultFontName ||
+    JSON.stringify(font.settings) !== JSON.stringify(defaultFontSettings)
+  );
+}

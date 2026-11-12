@@ -730,6 +730,21 @@ function drawGraphicElement(
   ctx.restore();
 }
 
+const sheetImages = new Map<string, Promise<HTMLImageElement>>();
+
+/** Sheet images are large and reused on every page, so each is decoded once. */
+function loadSheetImage(source: string): Promise<HTMLImageElement> {
+  let pending = sheetImages.get(source);
+  if (!pending) {
+    pending = loadImage(source).catch(error => {
+      sheetImages.delete(source);
+      throw error;
+    });
+    sheetImages.set(source, pending);
+  }
+  return pending;
+}
+
 function loadImage(source: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -813,8 +828,76 @@ export async function renderPage(
   if (!context)
     throw new Error("Canvas wird von diesem Browser nicht unterstützt.");
   context.scale(target.width / base.width, target.height / base.height);
-  drawPaperTemplate(context, page.paper, base.width, base.height, pageNumber);
+  if (page.paper.type === "image" && page.paper.background) {
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, base.width, base.height);
+    try {
+      const sheet = await loadSheetImage(page.paper.background);
+      context.imageSmoothingQuality = "high";
+      context.drawImage(sheet, 0, 0, base.width, base.height);
+    } catch {
+      throw new Error("Das Blatt konnte nicht geladen werden.");
+    }
+  } else {
+    drawPaperTemplate(context, page.paper, base.width, base.height, pageNumber);
+  }
   for (const element of page.elements)
     await drawElement(context, element, fonts);
   return canvas;
+}
+
+export interface PaperTextBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Line height as a multiple of the font size, so lines land on the sheet lines. */
+  lineHeight: number;
+  lines: number;
+}
+
+/**
+ * Distance from the top of a text block to the baseline of its first line for a
+ * font. Text is drawn with the "top" baseline, so this is what places a line on
+ * a ruled line. Falls back to a typical handwriting value outside the browser.
+ */
+export function baselineOffset(fontId: string, fontSize: number): number {
+  if (typeof document === "undefined") return fontSize * 0.72;
+  const context = document.createElement("canvas").getContext("2d");
+  if (!context) return fontSize * 0.72;
+  context.font = fontStyle({ fontSize }, getFontFamily(fontId || "caveat"));
+  context.textBaseline = "alphabetic";
+  const fromBaseline = context.measureText("H").actualBoundingBoxAscent;
+  context.textBaseline = "top";
+  const fromTop = context.measureText("H").actualBoundingBoxAscent;
+  const offset = fromBaseline - fromTop;
+  return Number.isFinite(offset) && offset > 0 ? offset : fontSize * 0.72;
+}
+
+/** The text block that puts every line of handwriting on the writing lines of a sheet. */
+export function textBoxOnPaper(
+  paper: PaperSettings,
+  fontId: string,
+  fontSize: number
+): PaperTextBox | undefined {
+  const layout = paper.textLayout;
+  if (!layout) return undefined;
+  const page = pagePixelDimensions(paper);
+  const spacing = Math.max(1, mmToPx(layout.lineSpacing));
+  const firstLine = mmToPx(layout.firstLine);
+  const x = mmToPx(layout.insetLeft);
+  const right = page.width - mmToPx(layout.insetRight);
+  const bottomLimit = page.height - mmToPx(3);
+  const lines = Math.max(
+    1,
+    Math.floor((bottomLimit - firstLine) / spacing) + 1
+  );
+  return {
+    x,
+    y: firstLine - baselineOffset(fontId, fontSize),
+    width: Math.max(20, right - x),
+    height: lines * spacing,
+    lineHeight: spacing / Math.max(1, fontSize),
+    lines,
+  };
 }

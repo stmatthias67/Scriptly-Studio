@@ -20,6 +20,7 @@ import {
   type StudioPage,
 } from "./types";
 import { loadFonts, getFontFamily } from "./font-engine";
+import { HandwritingSample } from "./HandwritingSample";
 import PaperPreview from "./PaperPreview";
 import { EmptyState, Modal } from "./components";
 import { DocumentCard } from "./Documents";
@@ -213,14 +214,11 @@ export default function Dashboard() {
                   className="mini-font"
                   onClick={() => navigate(`/schriften/${font.id}`)}
                 >
-                  <span
+                  <HandwritingSample
+                    project={font}
+                    text="AaBbCc"
                     className="mini-font-sample"
-                    style={{
-                      fontFamily: `"${getFontFamily(font.id)}", Caveat, cursive`,
-                    }}
-                  >
-                    Aa Bb Cc
-                  </span>
+                  />
                   <strong>{font.name}</strong>
                   <small>
                     {

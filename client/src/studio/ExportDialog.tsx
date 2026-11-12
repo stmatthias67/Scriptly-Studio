@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, FileImage, FileText, LoaderCircle } from "lucide-react";
+import {
+  Crown,
+  Download,
+  FileImage,
+  FileText,
+  LoaderCircle,
+  Share2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "./components";
 import { MAX_RENDER_PIXELS, pagePixelDimensions, renderPage } from "./render";
 import type { FontProject, StudioDocument } from "./types";
+import { useStudio } from "./store";
 import { paperDimensions } from "./types";
 import { editorText as t } from "./locales/editor";
 
@@ -93,14 +101,14 @@ function downloadDataUrl(dataUrl: string, fileName: string): void {
   link.remove();
 }
 
-export async function exportPdf(
+/** Renders the chosen pages into one PDF with the original millimetre sizes. */
+async function buildPdf(
   document: StudioDocument,
-  fonts: FontProject[] = [],
+  fonts: FontProject[],
   indexes: number[],
-  filename: string,
-  dpi = 150,
+  dpi: number,
   onProgress?: (current: number, total: number) => void
-): Promise<void> {
+) {
   ensureRenderable(document, indexes, dpi);
   const { jsPDF } = await import("jspdf");
   const first = document.pages[indexes[0]];
@@ -135,7 +143,54 @@ export async function exportPdf(
       "FAST"
     );
   }
+  return pdf;
+}
+
+export async function exportPdf(
+  document: StudioDocument,
+  fonts: FontProject[] = [],
+  indexes: number[],
+  filename: string,
+  dpi = 150,
+  onProgress?: (current: number, total: number) => void
+): Promise<void> {
+  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
   pdf.save(`${sanitizeFilename(filename)}.pdf`);
+}
+
+/**
+ * Hands the PDF to GoodNotes. On iPad and iPhone the share sheet lists GoodNotes
+ * ("In GoodNotes öffnen"), which imports it as a notebook. Where files cannot be
+ * shared the PDF is downloaded so it can be imported in GoodNotes from Files.
+ */
+export async function sendPdfToGoodNotes(
+  document: StudioDocument,
+  fonts: FontProject[] = [],
+  indexes: number[],
+  filename: string,
+  dpi = 150,
+  onProgress?: (current: number, total: number) => void
+): Promise<"shared" | "downloaded" | "cancelled"> {
+  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
+  const name = `${sanitizeFilename(filename)}.pdf`;
+  const file = new File([pdf.output("blob")], name, {
+    type: "application/pdf",
+  });
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function" &&
+    navigator.canShare?.({ files: [file] })
+  ) {
+    try {
+      await navigator.share({ files: [file], title: document.title || name });
+      return "shared";
+    } catch (reason) {
+      if (reason instanceof DOMException && reason.name === "AbortError")
+        return "cancelled";
+    }
+  }
+  pdf.save(name);
+  return "downloaded";
 }
 
 async function exportImages(
@@ -173,6 +228,8 @@ export default function ExportDialog({
   fonts = [],
   currentPageIndex = 0,
 }: ExportDialogProps) {
+  const { settings } = useStudio();
+  const isPro = settings.plan !== "free";
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [scope, setScope] = useState<ExportScope>("all");
   const [range, setRange] = useState("");
@@ -218,6 +275,43 @@ export default function ExportDialog({
       })
     ),
   ].join(" / ");
+
+  const shareToGoodNotes = async () => {
+    if (!filename.trim()) {
+      setError(t.filenameRequired);
+      return;
+    }
+    if (!indexes.length) {
+      setError(t.invalidPages);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await sendPdfToGoodNotes(
+        document,
+        fonts,
+        indexes,
+        sanitizeFilename(filename),
+        dpi,
+        (current, total) => setProgress({ current, total })
+      );
+      if (result === "shared") toast.success(t.goodNotesShared);
+      if (result === "downloaded")
+        toast.message(t.goodNotesDownloaded, { duration: 9000 });
+      if (result !== "cancelled") onClose();
+    } catch (reason) {
+      const message =
+        reason instanceof Error && reason.message
+          ? reason.message
+          : t.exportFailed;
+      setError(message);
+      toast.error(message);
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
 
   const startExport = async () => {
     const safeFilename = sanitizeFilename(filename);
@@ -298,8 +392,12 @@ export default function ExportDialog({
             disabled={busy}
           >
             <option value="pdf">PDF</option>
-            <option value="png">PNG</option>
-            <option value="jpeg">JPEG</option>
+            <option value="png" disabled={!isPro}>
+              PNG{isPro ? "" : " · Pro"}
+            </option>
+            <option value="jpeg" disabled={!isPro}>
+              JPEG{isPro ? "" : " · Pro"}
+            </option>
           </select>
         </label>
         <fieldset className="export-scope" disabled={busy}>
@@ -355,9 +453,17 @@ export default function ExportDialog({
           >
             <option value={96}>96 dpi</option>
             <option value={150}>150 dpi</option>
-            <option value={300}>300 dpi</option>
+            <option value={300} disabled={!isPro}>
+              300 dpi{isPro ? "" : " · Pro"}
+            </option>
           </select>
         </label>
+        {!isPro && (
+          <p className="export-pro-hint">
+            <Crown size={14} />
+            {t.exportProHint}
+          </p>
+        )}
         <p className="muted export-paper-size">
           {t.paperSize}: {sizeSummary}
         </p>
@@ -391,6 +497,16 @@ export default function ExportDialog({
           <button className="btn secondary" onClick={onClose} disabled={busy}>
             {t.cancel}
           </button>
+          {format === "pdf" && (
+            <button
+              className="btn secondary"
+              onClick={() => void shareToGoodNotes()}
+              disabled={busy || !indexes.length}
+            >
+              <Share2 size={16} />
+              {t.goodNotesSend}
+            </button>
+          )}
           <button
             className="btn primary"
             onClick={() => void startExport()}

@@ -1,626 +1,622 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Copy,
+  Check,
   FilePlus2,
-  Heart,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
+  ImagePlus,
+  Lock,
+  Ruler,
+  Save,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { Modal } from "./components";
-import { PaperControls } from "./PaperControls";
+import { NumberField } from "./components";
 import PaperPreview from "./PaperPreview";
-import { paperLocale, paperTypeLabels } from "./locales/paper";
+import { paperLocale as t } from "./locales/paper";
 import { useStudio } from "./store";
+import { loadFontVariants } from "./font-engine";
+import { textBoxOnPaper } from "./render";
+import { detectSheetLines } from "./sheet-detect";
+import { planLimits } from "./plan";
 import {
+  createText,
   uid,
   type PaperSettings,
   type PaperTemplate,
-  type StudioDocument,
+  type PaperTextLayout,
   type StudioPage,
 } from "./types";
 import "./PaperStudio.css";
 
 export type PaperStudioProps = { templateId?: string };
-type ApplyScope = "all" | "one";
 
-function clonePaper(paper: PaperSettings): PaperSettings {
-  return { ...paper };
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
+
+interface SheetDraft {
+  id: string;
+  name: string;
+  paper: PaperSettings;
+  /** True once the person set or confirmed the writing grid themselves. */
+  configured: boolean;
+  isNew: boolean;
 }
 
-function previewPage(paper: PaperSettings, id = "preview"): StudioPage {
-  return { id, paper: clonePaper(paper), elements: [] };
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
-function paperDescription(template: PaperTemplate) {
-  return `${paperTypeLabels[template.paper.type]} · ${template.paper.format} · ${template.paper.orientation === "portrait" ? "Hochformat" : "Querformat"}`;
+function decodeImage(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("decode"));
+    image.src = source;
+  });
+}
+
+/** Turns an uploaded image into an image paper with a first guess of its grid. */
+async function sheetFromFile(file: File): Promise<{
+  paper: PaperSettings;
+  detected: boolean;
+}> {
+  const background = await readAsDataUrl(file);
+  const image = await decodeImage(background);
+  const portrait = image.naturalHeight >= image.naturalWidth;
+  const ratio =
+    Math.max(image.naturalWidth, image.naturalHeight) /
+    Math.min(image.naturalWidth, image.naturalHeight);
+  const a4 = Math.abs(ratio - 297 / 210) < 0.03;
+  const short = 210;
+  const long = a4 ? 297 : Math.min(600, Math.round(short * ratio * 10) / 10);
+  const width = portrait ? short : long;
+  const height = portrait ? long : short;
+  const found = detectSheetLines(image, height);
+  const textLayout: PaperTextLayout = {
+    firstLine: found?.firstLine ?? 20,
+    lineSpacing: found?.lineSpacing ?? 8,
+    insetLeft: 12,
+    insetRight: 12,
+  };
+  return {
+    detected: Boolean(found),
+    paper: {
+      type: "image",
+      format: a4 ? "A4" : "custom",
+      width,
+      height,
+      orientation: portrait ? "portrait" : "landscape",
+      color: "#ffffff",
+      lineColor: "#d6d9dc",
+      spacing: textLayout.lineSpacing,
+      lineWidth: 0.2,
+      margin: 0,
+      header: "",
+      footer: "",
+      border: false,
+      texture: false,
+      pageNumbers: false,
+      background,
+      textLayout,
+    },
+  };
+}
+
+/** Updates the address without remounting the studio, so a reload reopens the sheet. */
+function replaceAddress(path: string) {
+  window.history.replaceState(window.history.state, "", path);
+}
+
+function draftFrom(template: PaperTemplate): SheetDraft {
+  return {
+    id: template.id,
+    name: template.name,
+    paper: structuredClone(template.paper),
+    configured: !template.builtIn,
+    isNew: false,
+  };
+}
+
+function SheetCard({
+  template,
+  active,
+  onSelect,
+}: {
+  template: PaperTemplate;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`sheet-card ${active ? "active" : ""}`}
+      onClick={onSelect}
+      aria-pressed={active}
+    >
+      <span className="sheet-card-thumb">
+        {template.paper.background && (
+          <img src={template.paper.background} alt="" loading="lazy" />
+        )}
+      </span>
+      <span className="sheet-card-meta">
+        <strong>{template.name}</strong>
+        <small>
+          {template.builtIn ? (
+            <>
+              <Lock size={11} /> {t.standard}
+            </>
+          ) : (
+            t.uploaded
+          )}
+        </small>
+      </span>
+    </button>
+  );
 }
 
 export default function PaperStudio({ templateId }: PaperStudioProps) {
-  const { data, settings, updateTemplate } = useStudio();
+  const { data, settings, updateTemplate, deleteTemplate } = useStudio();
   const [, navigate] = useLocation();
-  const [createdTemplateId, setCreatedTemplateId] = useState<
-    string | undefined
-  >();
-  const activeTemplateId = templateId ?? createdTemplateId;
-  const template = data.templates.find(entry => entry.id === activeTemplateId);
-  const [name, setName] = useState(template?.name ?? "");
-  const [paper, setPaper] = useState<PaperSettings>(() =>
-    clonePaper(template?.paper ?? settings.defaultPaper)
+  const fileInput = useRef<HTMLInputElement>(null);
+  const initial =
+    data.templates.find(template => template.id === templateId) ??
+    data.templates[0];
+  const [draft, setDraft] = useState<SheetDraft | undefined>(() =>
+    initial ? draftFrom(initial) : undefined
   );
+  const [previewText, setPreviewText] = useState<string>(t.previewDefault);
+  const [fontId, setFontId] = useState(settings.defaultFontId || "caveat");
+  const [fontSize, setFontSize] = useState(settings.defaultFontSize);
+  const [fontsReady, setFontsReady] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (template) {
-      setName(template.name);
-      setPaper(clonePaper(template.paper));
-      return;
-    }
-    if (!activeTemplateId) {
-      setName("");
-      setPaper(clonePaper(settings.defaultPaper));
-    }
-  }, [activeTemplateId, settings.defaultPaper, template]);
-
-  const isEditing = Boolean(template);
-  const reset = () => {
-    setName(template?.name ?? "");
-    setPaper(clonePaper(template?.paper ?? settings.defaultPaper));
-  };
-  const saveTemplate = () => {
-    const trimmedName = name.trim();
-    if (!trimmedName || trimmedName.length > 100) {
-      toast.error(paperLocale.templateNameRequired);
-      return;
-    }
-    if (template) {
-      updateTemplate({
-        ...template,
-        name: trimmedName,
-        paper: clonePaper(paper),
-      });
-      toast.success(paperLocale.updatedTemplate);
-      return;
-    }
-    const id = uid();
-    updateTemplate({
-      id,
-      name: trimmedName,
-      paper: clonePaper(paper),
-      favorite: false,
-      builtIn: false,
+    let live = true;
+    void loadFontVariants(data.fonts).then(() => {
+      if (live) setFontsReady(value => value + 1);
     });
-    setCreatedTemplateId(id);
-    toast.success(paperLocale.savedTemplate);
-    navigate(`/papierstudio/${id}`);
+    return () => {
+      live = false;
+    };
+  }, [data.fonts]);
+
+  const builtIn = data.templates.filter(template => template.builtIn);
+  const uploads = data.templates.filter(template => !template.builtIn);
+  const selectedTemplate = data.templates.find(
+    template => template.id === draft?.id
+  );
+  const locked = Boolean(selectedTemplate?.builtIn);
+  const layout = draft?.paper.textLayout;
+
+  const previewPage = useMemo<StudioPage | undefined>(() => {
+    if (!draft) return undefined;
+    const box = textBoxOnPaper(draft.paper, fontId, fontSize);
+    const element = createText(settings, box?.x ?? 60, box?.y ?? 60);
+    element.text = previewText;
+    element.fontId = fontId;
+    element.fontSize = fontSize;
+    if (box) {
+      element.width = box.width;
+      element.height = box.height;
+      element.lineHeight = box.lineHeight;
+    }
+    element.paragraphSpacing = 0;
+    return { id: "sheet-preview", paper: draft.paper, elements: [element] };
+    // fontsReady re-measures the baseline once handwriting fonts are installed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, fontId, fontSize, previewText, settings, fontsReady]);
+
+  const select = (template: PaperTemplate) => {
+    setDraft(draftFrom(template));
+    replaceAddress(`/papierstudio/${template.id}`);
   };
+
+  const setLayout = (key: keyof PaperTextLayout, value: number) => {
+    setDraft(current => {
+      if (!current?.paper.textLayout) return current;
+      const textLayout = { ...current.paper.textLayout, [key]: value };
+      return {
+        ...current,
+        configured: true,
+        paper: {
+          ...current.paper,
+          textLayout,
+          spacing: textLayout.lineSpacing,
+        },
+      };
+    });
+  };
+
+  const upload = async (file: File | undefined) => {
+    if (!file) return;
+    if (!ACCEPTED.includes(file.type)) {
+      toast.error(t.uploadWrongType);
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(t.uploadTooLarge);
+      return;
+    }
+    if (uploads.length >= planLimits(settings.plan).sheets) {
+      toast.error(t.limitReached, {
+        action: { label: "Pläne", onClick: () => navigate("/abo") },
+      });
+      return;
+    }
+    setBusy(true);
+    try {
+      const { paper, detected } = await sheetFromFile(file);
+      setDraft({
+        id: uid(),
+        name: file.name.replace(/\.[^.]+$/, "").slice(0, 80),
+        paper,
+        configured: false,
+        isNew: true,
+      });
+      toast.message(detected ? t.uploadDetected : t.uploadNotDetected);
+    } catch {
+      toast.error(t.uploadFailed);
+    } finally {
+      setBusy(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const canSave =
+    Boolean(draft) && !locked && Boolean(draft?.configured) && !busy;
+
+  const save = () => {
+    if (!draft || !canSave) return;
+    const name = draft.name.trim();
+    if (!name) {
+      toast.error(t.nameRequired);
+      return;
+    }
+    updateTemplate({
+      id: draft.id,
+      name,
+      paper: structuredClone(draft.paper),
+      favorite: false,
+    });
+    setDraft({ ...draft, name, isNew: false });
+    replaceAddress(`/papierstudio/${draft.id}`);
+    toast.success(t.saved);
+  };
+
+  const remove = () => {
+    if (!draft || locked || draft.isNew) return;
+    if (!confirm(t.deleteConfirm)) return;
+    deleteTemplate(draft.id);
+    const fallback = data.templates.find(template => template.builtIn);
+    setDraft(fallback ? draftFrom(fallback) : undefined);
+    replaceAddress("/papierstudio");
+    toast.success(t.deleted);
+  };
+
   const startDocument = () => {
-    navigate("/dokumente/neu");
+    if (!draft) return;
+    if (draft.isNew) {
+      toast.error(t.confirmGridHint);
+      return;
+    }
+    navigate(`/dokumente/neu?blatt=${encodeURIComponent(draft.id)}`);
   };
 
   return (
-    <main className="paper-studio">
-      <header className="paper-studio-header">
+    <div className="sheet-studio content-width">
+      <header className="sheet-studio-header">
         <div>
-          <p className="eyebrow">{paperLocale.eyebrow}</p>
-          <h1>{isEditing ? paperLocale.editTemplate : paperLocale.title}</h1>
-          <p>
-            {isEditing
-              ? "Passe diese gespeicherte Vorlage an. Name, Favorit und Kennung bleiben dabei erhalten."
-              : paperLocale.description}
-          </p>
-        </div>
-        <div className="paper-studio-header-actions">
-          <button
-            type="button"
-            className="btn secondary"
-            onClick={reset}
-            title={paperLocale.resetHint}
-          >
-            {paperLocale.reset}
-          </button>
-          <button
-            type="button"
-            className="btn secondary"
-            onClick={startDocument}
-          >
-            <FilePlus2 size={17} />
-            {paperLocale.startDocument}
-          </button>
-          <button type="button" className="btn primary" onClick={saveTemplate}>
-            {isEditing ? paperLocale.saveChanges : paperLocale.saveTemplate}
-          </button>
+          <p className="eyebrow">{t.eyebrow}</p>
+          <h1>{t.title}</h1>
+          <p className="muted">{t.description}</p>
         </div>
       </header>
 
-      <div className="paper-editor-shell">
-        <section className="paper-stage" aria-labelledby="paper-preview-title">
-          <div className="paper-stage-topline">
-            <div>
-              <p className="eyebrow">{paperLocale.livePreview}</p>
-              <h2 id="paper-preview-title">
-                {name.trim() || paperLocale.newTemplate}
-              </h2>
-            </div>
-            <p>{paperLocale.livePreviewHint}</p>
-          </div>
-          <div className="paper-stage-preview">
-            <PaperPreview
-              page={previewPage(paper)}
-              fonts={data.fonts}
-              className="paper-studio-canvas"
-              pageNumber={1}
-            />
-          </div>
-        </section>
-
-        <section
-          className="paper-control-dock"
-          aria-label={paperLocale.controls}
-        >
-          <div className="paper-control-dock-title">
-            <div>
-              <p className="eyebrow">{paperLocale.controlsHint}</p>
-              <h2>{paperLocale.controls}</h2>
-            </div>
-            <SlidersHorizontal size={20} aria-hidden="true" />
-          </div>
-          <div className="paper-control-section">
-            <label className="field">
-              <span>{paperLocale.templateName}</span>
-              <input
-                value={name}
-                onChange={event => setName(event.currentTarget.value)}
-                placeholder={paperLocale.templateNamePlaceholder}
-                maxLength={100}
+      <div className="sheet-studio-layout">
+        <aside className="sheet-library card" aria-label={t.library}>
+          <h2>{t.library}</h2>
+          <div className="sheet-library-grid">
+            {builtIn.map(template => (
+              <SheetCard
+                key={template.id}
+                template={template}
+                active={draft?.id === template.id}
+                onSelect={() => select(template)}
               />
-            </label>
+            ))}
+            {uploads.map(template => (
+              <SheetCard
+                key={template.id}
+                template={template}
+                active={draft?.id === template.id}
+                onSelect={() => select(template)}
+              />
+            ))}
+            {draft?.isNew && (
+              <SheetCard
+                template={{
+                  id: draft.id,
+                  name: draft.name || t.uploaded,
+                  paper: draft.paper,
+                  favorite: false,
+                }}
+                active
+                onSelect={() => undefined}
+              />
+            )}
           </div>
-          <PaperControls paper={paper} onChange={setPaper} />
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function TemplateCard({
-  template,
-  fonts,
-  onUse,
-  onEdit,
-  onDuplicate,
-  onDelete,
-  onFavorite,
-}: {
-  template: PaperTemplate;
-  fonts: ReturnType<typeof useStudio>["data"]["fonts"];
-  onUse: () => void;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onFavorite: () => void;
-}) {
-  return (
-    <article className="paper-template-card">
-      <div className="paper-template-preview">
-        <PaperPreview
-          page={previewPage(template.paper, `${template.id}-preview`)}
-          fonts={fonts}
-        />
-      </div>
-      <div className="paper-template-content">
-        <div className="paper-template-meta">
-          <span className="tag">
-            {template.builtIn
-              ? paperLocale.starterTemplate
-              : paperTypeLabels[template.paper.type]}
-          </span>
           <button
             type="button"
-            className={`paper-template-favorite ${template.favorite ? "is-favorite" : ""}`}
-            onClick={onFavorite}
-            aria-label={
-              template.favorite ? paperLocale.unfavorite : paperLocale.favorite
-            }
-            title={
-              template.favorite ? paperLocale.unfavorite : paperLocale.favorite
-            }
+            className="btn secondary sheet-upload"
+            onClick={() => fileInput.current?.click()}
+            disabled={busy}
           >
-            <Heart
-              size={17}
-              fill={template.favorite ? "currentColor" : "none"}
-            />
+            <ImagePlus size={16} />
+            {t.upload}
           </button>
-        </div>
-        <h2 title={template.name}>{template.name}</h2>
-        <p>{paperDescription(template)}</p>
-        <div className="paper-template-actions">
-          <button type="button" className="btn primary small" onClick={onUse}>
-            {paperLocale.use}
-          </button>
-          <details className="paper-template-more">
-            <summary aria-label={`Aktionen für ${template.name}`}>
-              <MoreHorizontal size={18} />
-            </summary>
-            <div className="paper-template-menu">
-              <button type="button" onClick={onEdit}>
-                <Pencil size={14} />
-                {paperLocale.edit}
-              </button>
-              <button type="button" onClick={onDuplicate}>
-                <Copy size={14} />
-                {paperLocale.duplicate}
-              </button>
-              <button type="button" className="is-danger" onClick={onDelete}>
-                <Trash2 size={14} />
-                {paperLocale.delete}
-              </button>
-            </div>
-          </details>
-        </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={ACCEPTED.join(",")}
+            hidden
+            onChange={event => void upload(event.target.files?.[0])}
+          />
+          <p className="sheet-note">{t.uploadHint}</p>
+        </aside>
+
+        {draft && previewPage ? (
+          <>
+            <section className="sheet-preview card" aria-label={t.preview}>
+              <PaperPreview
+                page={previewPage}
+                fonts={data.fonts}
+                className="sheet-preview-paper"
+              />
+            </section>
+
+            <section className="sheet-controls card" aria-label={t.grid}>
+              {!locked && (
+                <label className="field">
+                  <span>{t.name}</span>
+                  <input
+                    value={draft.name}
+                    placeholder={t.namePlaceholder}
+                    maxLength={80}
+                    onChange={event =>
+                      setDraft({ ...draft, name: event.target.value })
+                    }
+                  />
+                </label>
+              )}
+
+              <label className="field">
+                <span>{t.previewText}</span>
+                <textarea
+                  rows={4}
+                  value={previewText}
+                  onChange={event =>
+                    setPreviewText(event.target.value.slice(0, 1500))
+                  }
+                />
+              </label>
+              <div className="sheet-field-row">
+                <label className="field">
+                  <span>{t.font}</span>
+                  <select
+                    value={fontId}
+                    onChange={event => setFontId(event.target.value)}
+                  >
+                    <option value="caveat">Caveat</option>
+                    {data.fonts.map(font => (
+                      <option key={font.id} value={font.id}>
+                        {font.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>
+                    {t.fontSize} ({t.pixels})
+                  </span>
+                  <NumberField
+                    value={fontSize}
+                    min={8}
+                    max={150}
+                    onChange={setFontSize}
+                  />
+                </label>
+              </div>
+
+              <div className="sheet-grid-heading">
+                <Ruler size={16} />
+                <div>
+                  <strong>{t.grid}</strong>
+                  <small>{t.gridHint}</small>
+                </div>
+              </div>
+              {locked && <p className="sheet-note locked">{t.builtInLocked}</p>}
+              {layout && (
+                <fieldset className="sheet-grid-fields" disabled={locked}>
+                  <label className="field sheet-spacing">
+                    <span>
+                      {t.lineSpacing} ({t.millimetres})
+                    </span>
+                    <div className="sheet-spacing-row">
+                      <input
+                        type="range"
+                        min={2}
+                        max={20}
+                        step={0.01}
+                        value={layout.lineSpacing}
+                        aria-label={t.lineSpacing}
+                        onChange={event =>
+                          setLayout("lineSpacing", Number(event.target.value))
+                        }
+                      />
+                      <NumberField
+                        value={layout.lineSpacing}
+                        min={2}
+                        max={40}
+                        decimals={3}
+                        onChange={value => setLayout("lineSpacing", value)}
+                      />
+                    </div>
+                  </label>
+                  <label className="field">
+                    <span>
+                      {t.firstLine} ({t.millimetres})
+                    </span>
+                    <NumberField
+                      value={layout.firstLine}
+                      min={0}
+                      max={draft.paper.height}
+                      decimals={2}
+                      onChange={value => setLayout("firstLine", value)}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>
+                      {t.insetLeft} ({t.millimetres})
+                    </span>
+                    <NumberField
+                      value={layout.insetLeft}
+                      min={0}
+                      max={draft.paper.width / 2}
+                      decimals={1}
+                      onChange={value => setLayout("insetLeft", value)}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>
+                      {t.insetRight} ({t.millimetres})
+                    </span>
+                    <NumberField
+                      value={layout.insetRight}
+                      min={0}
+                      max={draft.paper.width / 2}
+                      decimals={1}
+                      onChange={value => setLayout("insetRight", value)}
+                    />
+                  </label>
+                </fieldset>
+              )}
+
+              {!locked && !draft.configured && (
+                <div className="sheet-confirm">
+                  <p className="sheet-note">{t.confirmGridHint}</p>
+                  <button
+                    type="button"
+                    className="btn secondary small"
+                    onClick={() => setDraft({ ...draft, configured: true })}
+                  >
+                    <Check size={15} />
+                    {t.confirmGrid}
+                  </button>
+                </div>
+              )}
+
+              <div className="sheet-actions">
+                {!locked && (
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={!canSave}
+                    onClick={save}
+                  >
+                    <Save size={16} />
+                    {draft.isNew ? t.save : t.saveChanges}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={startDocument}
+                >
+                  <FilePlus2 size={16} />
+                  {t.newDocument}
+                </button>
+                {!locked && !draft.isNew && (
+                  <button
+                    type="button"
+                    className="icon-btn danger"
+                    onClick={remove}
+                    aria-label={t.delete}
+                    title={t.delete}
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                )}
+              </div>
+            </section>
+          </>
+        ) : (
+          <p className="sheet-note">{t.missingTemplate}</p>
+        )}
       </div>
-    </article>
+    </div>
   );
 }
 
-/** Template collection with deliberate use choices: a new document or selected existing pages. */
+/** Overview of every sheet: the standard ones and the uploaded ones. */
 export function TemplatesPage() {
-  const {
-    data,
-    createDocument,
-    updateDocument,
-    updateTemplate,
-    deleteTemplate,
-  } = useStudio();
+  const { data } = useStudio();
   const [, navigate] = useLocation();
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<"all" | PaperSettings["type"]>("all");
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [useTemplate, setUseTemplate] = useState<PaperTemplate | null>(null);
-  const [applyTemplate, setApplyTemplate] = useState<PaperTemplate | null>(
-    null
-  );
-  const [deleteCandidate, setDeleteCandidate] = useState<PaperTemplate | null>(
-    null
-  );
-  const [documentId, setDocumentId] = useState("");
-  const [pageId, setPageId] = useState("");
-  const [scope, setScope] = useState<ApplyScope>("all");
-
-  const templates = useMemo(
-    () =>
-      data.templates
-        .filter(template => {
-          const text =
-            `${template.name} ${paperTypeLabels[template.paper.type]}`.toLocaleLowerCase(
-              "de"
-            );
-          return (
-            text.includes(query.trim().toLocaleLowerCase("de")) &&
-            (type === "all" || template.paper.type === type) &&
-            (!favoritesOnly || template.favorite)
-          );
-        })
-        .sort(
-          (left, right) =>
-            Number(right.favorite) - Number(left.favorite) ||
-            left.name.localeCompare(right.name, "de")
-        ),
-    [data.templates, favoritesOnly, query, type]
-  );
-
-  const selectedDocument = data.documents.find(
-    document => document.id === documentId
-  );
-  useEffect(() => {
-    if (!applyTemplate) return;
-    const nextDocument =
-      data.documents.find(document => document.id === documentId) ??
-      data.documents[0];
-    if (nextDocument && nextDocument.id !== documentId)
-      setDocumentId(nextDocument.id);
-    if (nextDocument && !nextDocument.pages.some(page => page.id === pageId))
-      setPageId(nextDocument.pages[0]?.id ?? "");
-  }, [applyTemplate, data.documents, documentId, pageId]);
-
-  const beginUse = (template: PaperTemplate) => setUseTemplate(template);
-  const createWithTemplate = (template: PaperTemplate) => {
-    const document = createDocument(clonePaper(template.paper));
-    setUseTemplate(null);
-    toast.success(paperLocale.documentCreated);
-    navigate(`/dokumente/${document.id}`);
-  };
-  const beginApply = (template: PaperTemplate) => {
-    setUseTemplate(null);
-    setApplyTemplate(template);
-    const firstDocument = data.documents[0];
-    setDocumentId(firstDocument?.id ?? "");
-    setPageId(firstDocument?.pages[0]?.id ?? "");
-    setScope("all");
-  };
-  const applyToDocument = () => {
-    if (!applyTemplate || !selectedDocument || (scope === "one" && !pageId))
-      return;
-    const pages = selectedDocument.pages.map(page =>
-      scope === "all" || page.id === pageId
-        ? { ...page, paper: clonePaper(applyTemplate.paper) }
-        : page
-    );
-    updateDocument({ ...selectedDocument, pages });
-    setApplyTemplate(null);
-    toast.success(paperLocale.applied);
-  };
-  const duplicate = (template: PaperTemplate) => {
-    updateTemplate({
-      ...template,
-      id: uid(),
-      name: `${template.name.slice(0, 90)} – Kopie`,
-      paper: clonePaper(template.paper),
-      favorite: false,
-      builtIn: false,
-    });
-    toast.success(paperLocale.duplicated);
-  };
-  const deleteSelected = () => {
-    if (!deleteCandidate) return;
-    deleteTemplate(deleteCandidate.id);
-    setDeleteCandidate(null);
-    toast.success(paperLocale.deleted);
-  };
-
+  const uploads = data.templates.filter(template => !template.builtIn);
   return (
-    <main className="templates-page">
-      <header className="templates-page-header">
+    <div className="sheet-studio content-width">
+      <header className="sheet-studio-header">
         <div>
-          <p className="eyebrow">{paperLocale.galleryEyebrow}</p>
-          <h1>{paperLocale.galleryTitle}</h1>
-          <p>{paperLocale.galleryDescription}</p>
+          <p className="eyebrow">{t.eyebrow}</p>
+          <h1>{t.templatesTitle}</h1>
+          <p className="muted">{t.templatesDescription}</p>
         </div>
         <button
           type="button"
           className="btn primary"
           onClick={() => navigate("/papierstudio")}
         >
-          <Plus size={17} />
-          {paperLocale.galleryCreate}
+          <ImagePlus size={16} />
+          {t.upload}
         </button>
       </header>
-
-      <div className="templates-toolbar" aria-label="Vorlagen filtern">
-        <label className="templates-search">
-          <Search size={16} aria-hidden="true" />
-          <input
-            value={query}
-            onChange={event => setQuery(event.currentTarget.value)}
-            placeholder={paperLocale.search}
-            aria-label={paperLocale.search}
-          />
-        </label>
-        <select
-          className="templates-filter-select"
-          value={type}
-          onChange={event =>
-            setType(event.currentTarget.value as "all" | PaperSettings["type"])
-          }
-          aria-label={paperLocale.type}
-        >
-          <option value="all">{paperLocale.allTypes}</option>
-          {Object.entries(paperTypeLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <label className="templates-favorite-filter">
-          <input
-            type="checkbox"
-            checked={favoritesOnly}
-            onChange={event => setFavoritesOnly(event.currentTarget.checked)}
-          />
-          {paperLocale.onlyFavorites}
-        </label>
-      </div>
-
-      {templates.length ? (
-        <div className="templates-grid">
-          {templates.map(template => (
-            <TemplateCard
-              key={template.id}
+      <div className="sheet-overview">
+        {data.templates.map(template => (
+          <article className="sheet-overview-card card" key={template.id}>
+            <SheetCard
               template={template}
-              fonts={data.fonts}
-              onUse={() => beginUse(template)}
-              onEdit={() => navigate(`/papierstudio/${template.id}`)}
-              onDuplicate={() => duplicate(template)}
-              onDelete={() => setDeleteCandidate(template)}
-              onFavorite={() =>
-                updateTemplate({ ...template, favorite: !template.favorite })
-              }
+              active={false}
+              onSelect={() => navigate(`/papierstudio/${template.id}`)}
             />
-          ))}
-        </div>
-      ) : (
-        <section className="paper-empty">
-          <Sparkles size={24} aria-hidden="true" />
-          <h2>{paperLocale.noTemplates}</h2>
-          <p>{paperLocale.noTemplatesHint}</p>
-          <button
-            type="button"
-            className="btn secondary"
-            onClick={() => {
-              setQuery("");
-              setType("all");
-              setFavoritesOnly(false);
-            }}
-          >
-            {paperLocale.showAll}
-          </button>
-        </section>
-      )}
-
-      <Modal
-        open={Boolean(useTemplate)}
-        onClose={() => setUseTemplate(null)}
-        title={paperLocale.useTitle}
-      >
-        {useTemplate && (
-          <div className="paper-modal-body">
-            <p>{paperLocale.useHint}</p>
-            <div className="paper-use-options">
+            <div className="sheet-overview-actions">
               <button
                 type="button"
-                className="paper-use-option"
-                onClick={() => createWithTemplate(useTemplate)}
+                className="btn secondary small"
+                onClick={() => navigate(`/papierstudio/${template.id}`)}
               >
-                <FilePlus2 size={19} />
-                <span>
-                  <strong>{paperLocale.useForNew}</strong>
-                  <small>{paperLocale.useForNewHint}</small>
-                </span>
+                {t.open}
               </button>
               <button
                 type="button"
-                className="paper-use-option"
-                disabled={!data.documents.length}
-                onClick={() => beginApply(useTemplate)}
+                className="btn secondary small"
+                onClick={() =>
+                  navigate(
+                    `/dokumente/neu?blatt=${encodeURIComponent(template.id)}`
+                  )
+                }
               >
-                <SlidersHorizontal size={19} />
-                <span>
-                  <strong>{paperLocale.applyExisting}</strong>
-                  <small>
-                    {data.documents.length
-                      ? paperLocale.applyExistingHint
-                      : paperLocale.noDocuments}
-                  </small>
-                </span>
+                <FilePlus2 size={14} />
+                {t.newDocument}
               </button>
             </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(applyTemplate)}
-        onClose={() => setApplyTemplate(null)}
-        title={paperLocale.applyExisting}
-      >
-        {applyTemplate && (
-          <div className="paper-modal-body">
-            <p>{paperLocale.applyExistingHint}</p>
-            <div className="paper-apply-options">
-              <label className="paper-modal-field">
-                {paperLocale.chooseDocument}
-                <select
-                  value={documentId}
-                  onChange={event => {
-                    const nextId = event.currentTarget.value;
-                    setDocumentId(nextId);
-                    setPageId(
-                      data.documents.find(document => document.id === nextId)
-                        ?.pages[0]?.id ?? ""
-                    );
-                  }}
-                >
-                  {data.documents.map(document => (
-                    <option key={document.id} value={document.id}>
-                      {document.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <fieldset className="paper-modal-field">
-                <legend>{paperLocale.applyScope}</legend>
-                <div className="paper-apply-scope">
-                  <label>
-                    <input
-                      type="radio"
-                      name="apply-scope"
-                      checked={scope === "all"}
-                      onChange={() => setScope("all")}
-                    />
-                    {paperLocale.allPages}
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="apply-scope"
-                      checked={scope === "one"}
-                      onChange={() => setScope("one")}
-                    />
-                    {paperLocale.onePage}
-                  </label>
-                </div>
-              </fieldset>
-              {scope === "one" && (
-                <label className="paper-modal-field">
-                  {paperLocale.choosePage}
-                  <select
-                    value={pageId}
-                    onChange={event => setPageId(event.currentTarget.value)}
-                  >
-                    {selectedDocument?.pages.map((page, index) => (
-                      <option key={page.id} value={page.id}>
-                        Seite {index + 1}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </div>
-            <div className="paper-modal-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setApplyTemplate(null)}
-              >
-                {paperLocale.cancel}
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={!selectedDocument || (scope === "one" && !pageId)}
-                onClick={applyToDocument}
-              >
-                {paperLocale.apply}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={Boolean(deleteCandidate)}
-        onClose={() => setDeleteCandidate(null)}
-        title={paperLocale.deleteTitle}
-      >
-        {deleteCandidate && (
-          <div className="paper-modal-body">
-            <p className="paper-delete-warning">
-              {paperLocale.deleteHint.replace("{name}", deleteCandidate.name)}
-            </p>
-            <div className="paper-modal-actions">
-              <button
-                type="button"
-                className="btn secondary"
-                onClick={() => setDeleteCandidate(null)}
-              >
-                {paperLocale.cancel}
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={deleteSelected}
-              >
-                {paperLocale.deleteConfirm}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </main>
+          </article>
+        ))}
+      </div>
+      {!uploads.length && <p className="sheet-note">{t.emptyUploads}</p>}
+    </div>
   );
 }

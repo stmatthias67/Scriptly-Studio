@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useStudio } from "./store";
 import { de } from "./locales/app";
 import { settingsText as t } from "./locales/settings";
-import { Field } from "./components";
+import { Field, NumberField } from "./components";
 import { PaperControls } from "./PaperControls";
 import { defaultSettings } from "./types";
 import { backupJson, validateBackup } from "./storage";
@@ -246,18 +246,12 @@ export default function Settings() {
                 </select>
               </Field>
               <Field label={t.size}>
-                <input
-                  type="number"
+                <NumberField
+                  value={settings.defaultFontSize}
                   min={8}
                   max={150}
-                  value={settings.defaultFontSize}
-                  onChange={e =>
-                    updateSettings({
-                      defaultFontSize: Math.max(
-                        8,
-                        Math.min(150, Number(e.target.value) || 8)
-                      ),
-                    })
+                  onChange={defaultFontSize =>
+                    updateSettings({ defaultFontSize })
                   }
                 />
               </Field>
@@ -271,19 +265,13 @@ export default function Settings() {
                 />
               </Field>
               <Field label={t.lineHeight}>
-                <input
-                  type="number"
-                  step={0.1}
+                <NumberField
+                  value={settings.defaultLineHeight}
                   min={0.8}
                   max={3}
-                  value={settings.defaultLineHeight}
-                  onChange={e =>
-                    updateSettings({
-                      defaultLineHeight: Math.max(
-                        0.8,
-                        Math.min(3, Number(e.target.value) || 1.5)
-                      ),
-                    })
+                  decimals={1}
+                  onChange={defaultLineHeight =>
+                    updateSettings({ defaultLineHeight })
                   }
                 />
               </Field>

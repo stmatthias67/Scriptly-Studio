@@ -115,6 +115,11 @@ export const editorText = {
   close: "Schließen",
   cancel: "Abbrechen",
   exportDone: "Export fertig.",
+  goodNotesSend: "An GoodNotes senden",
+  goodNotesShared: "PDF geteilt. In GoodNotes landet es als neues Notizbuch.",
+  goodNotesDownloaded:
+    "PDF gespeichert. In GoodNotes: Neu → Importieren und die Datei auswählen.",
+  exportProHint: "300 dpi sowie PNG und JPEG gibt es mit Pro.",
   untitledFile: "scriptly-dokument",
   zoom: "Vorschau",
   changeTitle: "Titel bearbeiten",

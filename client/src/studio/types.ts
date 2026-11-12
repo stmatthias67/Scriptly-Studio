@@ -9,7 +9,8 @@ export type PaperType =
   | "daily"
   | "study"
   | "journal"
-  | "custom";
+  | "custom"
+  | "image";
 export type PageFormat = "A4" | "A5" | "Letter" | "custom";
 export interface PaperSettings {
   type: PaperType;
@@ -27,6 +28,19 @@ export interface PaperSettings {
   border: boolean;
   texture: boolean;
   pageNumbers: boolean;
+  /** Sheet image (built-in path or uploaded data URL) for image papers. */
+  background?: string;
+  /** Where handwriting sits on an image paper. */
+  textLayout?: PaperTextLayout;
+}
+/** Writing grid of a sheet, all values in millimetres from the page edges. */
+export interface PaperTextLayout {
+  /** Distance from the top edge to the first writing line. */
+  firstLine: number;
+  /** Distance between two writing lines. */
+  lineSpacing: number;
+  insetLeft: number;
+  insetRight: number;
 }
 export interface PageElement {
   id: string;
@@ -127,25 +141,68 @@ export interface StudioSettings {
   defaultColor: string;
   defaultLineHeight: number;
   defaultPaper: PaperSettings;
+  /** Membership chosen in the demo checkout; stored only on this device. */
+  plan: "free" | "pro" | "lifetime";
+  planCycle?: "monthly" | "yearly";
 }
 export const uid = () => crypto.randomUUID();
-export const basePaper: PaperSettings = {
-  type: "dotted",
-  format: "A4",
-  width: 210,
-  height: 297,
-  orientation: "portrait",
-  color: "#fffdf8",
-  lineColor: "#b9c4b9",
-  spacing: 7,
-  lineWidth: 0.25,
-  margin: 18,
-  header: "",
-  footer: "",
-  border: false,
-  texture: false,
-  pageNumbers: false,
-};
+const sheetDefaults: Omit<PaperSettings, "type" | "background" | "textLayout"> =
+  {
+    format: "A4",
+    width: 210,
+    height: 297,
+    orientation: "portrait",
+    color: "#ffffff",
+    lineColor: "#d6d9dc",
+    spacing: 6.175,
+    lineWidth: 0.2,
+    margin: 0,
+    header: "",
+    footer: "",
+    border: false,
+    texture: false,
+    pageNumbers: false,
+  };
+/** The standard sheets. Their writing grids were measured from the sheet images. */
+export const builtInSheets = {
+  lined: {
+    ...sheetDefaults,
+    type: "image",
+    background: "/papers/liniert.jpg",
+    spacing: 6.175,
+    textLayout: {
+      firstLine: 17.7,
+      lineSpacing: 6.175,
+      insetLeft: 10,
+      insetRight: 10,
+    },
+  },
+  dotted: {
+    ...sheetDefaults,
+    type: "image",
+    background: "/papers/punktiert.jpg",
+    spacing: 5.644,
+    textLayout: {
+      firstLine: 22.58,
+      lineSpacing: 5.644,
+      insetLeft: 16.93,
+      insetRight: 11.29,
+    },
+  },
+  grid: {
+    ...sheetDefaults,
+    type: "image",
+    background: "/papers/kariert.jpg",
+    spacing: 5.646,
+    textLayout: {
+      firstLine: 22.42,
+      lineSpacing: 5.646,
+      insetLeft: 16.77,
+      insetRight: 11.12,
+    },
+  },
+} satisfies Record<string, PaperSettings>;
+export const basePaper: PaperSettings = builtInSheets.lined;
 export const defaultFontSettings: FontSettings = {
   spacing: 25,
   wordSpacing: 280,
@@ -169,6 +226,7 @@ export const defaultSettings: StudioSettings = {
   defaultColor: "#354c43",
   defaultLineHeight: 1.5,
   defaultPaper: basePaper,
+  plan: "free",
 };
 export function paperDimensions(paper: PaperSettings) {
   const sizes: Record<PageFormat, [number, number]> = {
@@ -222,53 +280,41 @@ export const paperLabels: Record<PaperType, string> = {
   study: "Lernnotizen",
   journal: "Journal",
   custom: "Eigenes Layout",
+  image: "Eigenes Blatt",
 };
 export const builtInTemplates: PaperTemplate[] = [
   {
-    id: "builtin-dots",
-    name: "Kleine Gedanken",
-    paper: { ...basePaper, type: "dotted" },
+    id: "sheet-lined",
+    name: "Liniert",
+    paper: builtInSheets.lined,
     favorite: true,
     builtIn: true,
   },
   {
-    id: "builtin-lined",
-    name: "Zeile für Zeile",
-    paper: { ...basePaper, type: "lined", color: "#faf8f2", spacing: 8 },
+    id: "sheet-dotted",
+    name: "Punktiert",
+    paper: builtInSheets.dotted,
     favorite: true,
     builtIn: true,
   },
   {
-    id: "builtin-cornell",
-    name: "Wissen sammeln",
-    paper: { ...basePaper, type: "cornell", color: "#f5f7f3" },
-    favorite: false,
-    builtIn: true,
-  },
-  {
-    id: "builtin-week",
-    name: "Eine gute Woche",
-    paper: {
-      ...basePaper,
-      type: "weekly",
-      color: "#f9f5fa",
-      orientation: "landscape",
-    },
+    id: "sheet-grid",
+    name: "Kariert",
+    paper: builtInSheets.grid,
     favorite: true,
-    builtIn: true,
-  },
-  {
-    id: "builtin-grid",
-    name: "Raum für Ideen",
-    paper: { ...basePaper, type: "grid", spacing: 5, color: "#f6f5f0" },
-    favorite: false,
-    builtIn: true,
-  },
-  {
-    id: "builtin-journal",
-    name: "Für mich",
-    paper: { ...basePaper, type: "journal", color: "#fcf5eb" },
-    favorite: false,
     builtIn: true,
   },
 ];
+
+/** Keeps only sheets of the current system: the standard sheets plus uploaded ones. */
+export function currentTemplates(
+  templates: PaperTemplate[] = []
+): PaperTemplate[] {
+  const uploaded = templates.filter(
+    template =>
+      !template.builtIn &&
+      template.paper.type === "image" &&
+      template.paper.background
+  );
+  return [...structuredClone(builtInTemplates), ...uploaded];
+}

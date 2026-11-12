@@ -5,6 +5,8 @@ import {
   cloneElement,
   isValidElement,
   useId,
+  useState,
+  type InputHTMLAttributes,
   type ReactElement,
   type ReactNode,
 } from "react";
@@ -110,5 +112,87 @@ export function Field({
       {control}
       {hint && <small className="muted">{hint}</small>}
     </label>
+  );
+}
+
+type NumberFieldProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "value" | "onChange" | "min" | "max" | "type"
+> & {
+  value: number;
+  onChange: (value: number) => void;
+  min: number;
+  max: number;
+  /** Decimal places shown while the field is not being edited. */
+  decimals?: number;
+};
+
+/**
+ * A number input that can be emptied and retyped freely. Tapping it selects the
+ * current value so typing replaces it. Valid values apply while typing; on Enter
+ * or when leaving the field an empty entry becomes the smallest allowed value and
+ * anything outside the range is clamped.
+ */
+export function NumberField({
+  value,
+  onChange,
+  min,
+  max,
+  decimals = 0,
+  onFocus,
+  onBlur,
+  onKeyDown,
+  ...rest
+}: NumberFieldProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const format = (number: number) => String(Number(number.toFixed(decimals)));
+  const parse = (text: string) => Number(text.replace(",", "."));
+  const commit = () => {
+    if (draft === null) return;
+    const text = draft.trim();
+    if (!text) onChange(min);
+    else {
+      const number = parse(text);
+      if (Number.isFinite(number))
+        onChange(Math.min(max, Math.max(min, number)));
+    }
+    setDraft(null);
+  };
+  return (
+    <input
+      {...rest}
+      type="text"
+      inputMode={decimals > 0 ? "decimal" : "numeric"}
+      value={draft ?? format(value)}
+      onFocus={event => {
+        setDraft(format(value));
+        event.currentTarget.select();
+        onFocus?.(event);
+      }}
+      onChange={event => {
+        const text = event.target.value;
+        setDraft(text);
+        const number = parse(text.trim());
+        if (
+          text.trim() &&
+          Number.isFinite(number) &&
+          number >= min &&
+          number <= max
+        )
+          onChange(number);
+      }}
+      onBlur={event => {
+        commit();
+        onBlur?.(event);
+      }}
+      onKeyDown={event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+          event.currentTarget.blur();
+        }
+        onKeyDown?.(event);
+      }}
+    />
   );
 }

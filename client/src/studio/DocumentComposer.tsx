@@ -1,12 +1,18 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ArrowLeft, ChevronRight, FileText, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useStudio } from "./store";
 import { appCopy as c, de } from "./locales/app";
-import { basePaper, createPage, createText, paperLabels } from "./types";
+import { basePaper, createPage, createText } from "./types";
 import type { FontProject, PaperSettings, StudioPage } from "./types";
-import { mmToPx, pagePixelDimensions, splitTextForHeight } from "./render";
+import {
+  mmToPx,
+  pagePixelDimensions,
+  splitTextForHeight,
+  textBoxOnPaper,
+} from "./render";
+import { loadFontVariants } from "./font-engine";
 import "./DocumentComposer.css";
 
 function clonePaper(paper: PaperSettings): PaperSettings {
@@ -30,19 +36,24 @@ function generatedPages(
   const linedPaper = paperForLineLayout(paper);
   const dimensions = pagePixelDimensions(linedPaper);
   const margin = mmToPx(Math.max(0, linedPaper.margin));
-  const innerLeft = Math.min(margin, dimensions.width / 3);
-  const innerRight = Math.max(innerLeft + 4, dimensions.width - margin);
+  const sheetBox = textBoxOnPaper(linedPaper, fontId, fontSize);
+  const innerLeft = sheetBox?.x ?? Math.min(margin, dimensions.width / 3);
+  const innerRight = sheetBox
+    ? sheetBox.x + sheetBox.width
+    : Math.max(innerLeft + 4, dimensions.width - margin);
   const firstLine = margin;
-  const top =
-    linedPaper.type === "lined" || linedPaper.type === "custom"
+  const top = sheetBox
+    ? sheetBox.y
+    : linedPaper.type === "lined" || linedPaper.type === "custom"
       ? firstLine - fontSize * 0.72
       : margin;
   const bottom = dimensions.height - margin;
-  const height = Math.max(fontSize * 1.6, bottom - top);
+  const height = sheetBox?.height ?? Math.max(fontSize * 1.6, bottom - top);
   const lineHeight =
-    linedPaper.type === "lined" || linedPaper.type === "custom"
+    sheetBox?.lineHeight ??
+    (linedPaper.type === "lined" || linedPaper.type === "custom"
       ? Math.max(0.7, linedPaper.spacing / (fontSize / (96 / 25.4)))
-      : settings.defaultLineHeight;
+      : settings.defaultLineHeight);
   let safety = 0;
   while (remaining && safety < 100) {
     const page = createPage(clonePaper(linedPaper));
@@ -102,61 +113,36 @@ function FontOption({ font }: { font: FontProject }) {
 export default function DocumentComposer() {
   const { data, settings, createDocument, updateDocument } = useStudio();
   const [, navigate] = useLocation();
-  const linedTemplate = useMemo(
-    () => data.templates.find(template => template.paper.type === "lined"),
-    [data.templates]
-  );
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [fontId, setFontId] = useState(settings.defaultFontId || "caveat");
   const [color, setColor] = useState(settings.defaultColor);
   const [fontSize, setFontSize] = useState(settings.defaultFontSize);
-  const [paperId, setPaperId] = useState(linedTemplate?.id ?? "default-lined");
-
-  const paperChoices = useMemo<
-    Array<{ id: string; name: string; paper: PaperSettings }>
-  >(
-    () => [
-      ...(linedTemplate
-        ? [
-            {
-              id: linedTemplate.id,
-              name: linedTemplate.name,
-              paper: linedTemplate.paper,
-            },
-          ]
-        : []),
-      ...data.templates
-        .filter(template => template.id !== linedTemplate?.id)
-        .map(template => ({
-          id: template.id,
-          name: template.name,
-          paper: template.paper,
-        })),
-      {
-        id: "default-lined",
-        name: "Liniertes Blatt · A4",
-        paper: {
-          ...basePaper,
-          type: "lined",
-          spacing: 8,
-          color: "#fffdfb",
-          lineColor: "#d7ded3",
-        },
-      },
-    ],
-    [data.templates, linedTemplate]
-  );
+  const [paperId, setPaperId] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get("blatt");
+    return (
+      data.templates.find(template => template.id === requested)?.id ??
+      data.templates.find(
+        template =>
+          template.paper.background === settings.defaultPaper.background
+      )?.id ??
+      data.templates[0]?.id ??
+      ""
+    );
+  });
+  const paperChoices = data.templates;
   const selectedPaper =
     paperChoices.find(choice => choice.id === paperId)?.paper ??
     paperChoices[0]?.paper ??
     basePaper;
 
-  const generate = () => {
+  const generate = async () => {
     if (!text.trim()) {
       toast.error("Bitte gib zuerst einen Text ein.");
       return;
     }
+    // The handwriting must be installed before measuring where its baseline sits.
+    await loadFontVariants(data.fonts);
     const document = createDocument(selectedPaper);
     const pages = generatedPages(
       text,
@@ -279,13 +265,13 @@ export default function DocumentComposer() {
             >
               {paperChoices.map(choice => (
                 <option value={choice.id} key={choice.id}>
-                  {choice.name} · {paperLabels[choice.paper.type]}
+                  {choice.name}
                 </option>
               ))}
             </select>
             <small>
-              Der Text wird bei linierten Blättern automatisch auf die Zeilen
-              gesetzt.
+              Der Text wird automatisch auf die Linien des Blatts gesetzt.
+              Eigene Blätter stellst du im Papier-Studio ein.
             </small>
           </label>
         </div>

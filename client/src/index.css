@@ -2083,3 +2083,91 @@ select {
 .text-link {
   color: var(--accent-ink, var(--accent));
 }
+/* The font editor takes the full width; the navigation opens from the menu button. */
+@media (min-width: 761px) {
+  .focus-shell .main-shell,
+  .focus-shell.sidebar-collapsed .main-shell {
+    margin-left: 0;
+  }
+  .focus-shell .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: none;
+  }
+  .focus-shell .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .focus-shell .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(20, 24, 22, 0.24);
+  }
+  .focus-shell .desktop-collapse {
+    display: none;
+  }
+  .focus-shell .mobile-menu {
+    display: inline-flex;
+  }
+}
+.sheet-picker {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+.sheet-picker-option {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  text-align: left;
+}
+.sheet-picker-option.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.sheet-picker-thumb {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  background: #ffffff;
+  border-radius: 4px;
+  display: block;
+  overflow: hidden;
+  position: relative;
+}
+.sheet-picker-thumb img {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+.sheet-picker-thumb i {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 50%;
+  color: var(--accent-text);
+  display: flex;
+  height: 18px;
+  justify-content: center;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 18px;
+}
+.sheet-picker-name {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.export-pro-hint {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+}
