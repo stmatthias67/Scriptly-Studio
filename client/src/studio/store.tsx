@@ -12,6 +12,7 @@ import {
   basePaper,
   builtInTemplates,
   createPage,
+  currentTemplates,
   defaultFontSettings,
   defaultSettings,
   uid,
@@ -60,8 +61,12 @@ function loadSettings(): StudioSettings {
     return {
       ...structuredClone(defaultSettings),
       ...raw,
-      defaultPaper: { ...basePaper, ...raw.defaultPaper },
+      defaultPaper:
+        raw.defaultPaper?.type === "image" && raw.defaultPaper?.background
+          ? { ...basePaper, ...raw.defaultPaper }
+          : structuredClone(basePaper),
       theme: raw.theme === "dark" ? "dark" : "light",
+      plan: ["free", "pro", "lifetime"].includes(raw.plan) ? raw.plan : "free",
       accent: /^#[0-9a-f]{6}$/i.test(raw.accent)
         ? raw.accent
         : defaultSettings.accent,
@@ -90,8 +95,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       .then(saved => {
         if (live) {
           if (saved) {
-            dataRef.current = saved;
-            setData(saved);
+            // Old built-in and hand-built templates are retired; only the standard
+            // sheets and uploaded sheets remain.
+            const current = {
+              ...saved,
+              templates: currentTemplates(saved.templates),
+            };
+            dataRef.current = current;
+            setData(current);
           }
           setLoaded(true);
         }
@@ -269,7 +280,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   function deleteTemplate(id: string) {
     mutate(d => ({ ...d, templates: d.templates.filter(t => t.id !== id) }));
   }
-  async function replaceData(next: StudioData) {
+  async function replaceData(restored: StudioData) {
+    const next = {
+      ...restored,
+      templates: currentTemplates(restored.templates),
+    };
     if (timer.current) clearTimeout(timer.current);
     await queue.current.catch(() => {});
     await writeWorkspace(next);

@@ -36,6 +36,7 @@ const paper = z.object({
     "study",
     "journal",
     "custom",
+    "image",
   ]),
   format: z.enum(["A4", "A5", "Letter", "custom"]),
   width: finite.min(50).max(600),
@@ -51,6 +52,21 @@ const paper = z.object({
   border: z.boolean(),
   texture: z.boolean(),
   pageNumbers: z.boolean(),
+  background: z
+    .string()
+    .max(12000000)
+    .regex(
+      /^(data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+|\/papers\/[a-z0-9-]+\.(jpg|png|webp))$/
+    )
+    .optional(),
+  textLayout: z
+    .object({
+      firstLine: finite.min(0).max(600),
+      lineSpacing: finite.min(1).max(60),
+      insetLeft: finite.min(0).max(300),
+      insetRight: finite.min(0).max(300),
+    })
+    .optional(),
 });
 const element = z.object({
   id: z.string().max(100),

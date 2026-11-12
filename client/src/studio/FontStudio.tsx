@@ -36,6 +36,7 @@ import {
 } from "./font-engine";
 import { Modal } from "./components";
 import { eraseStrokes } from "./stroke-tools";
+import { planLimits } from "./plan";
 import { HandwritingSample, InkStroke } from "./HandwritingSample";
 import { fontHasEdits, newFontProject, useStudio } from "./store";
 import {
@@ -1094,7 +1095,7 @@ function FontWorkspace({
 }
 
 export default function FontStudio({ projectId }: { projectId?: string }) {
-  const { data } = useStudio();
+  const { data, settings } = useStudio();
   const [, navigate] = useLocation();
   // A new font starts as an unsaved draft: nothing is stored until the first edit.
   const [draft] = useState(() => newFontProject());
@@ -1102,6 +1103,30 @@ export default function FontStudio({ projectId }: { projectId?: string }) {
     ? data.fonts.find(font => font.id === projectId)
     : undefined;
 
+  if (!projectId && data.fonts.length >= planLimits(settings.plan).fonts)
+    return (
+      <main className="font-route-state page-shell">
+        <p className="eyebrow">{t.studioEyebrow}</p>
+        <h1>{t.limitTitle}</h1>
+        <p>{t.limitDescription}</p>
+        <div className="font-route-actions">
+          <button
+            className="btn primary"
+            type="button"
+            onClick={() => navigate("/abo")}
+          >
+            {t.limitUpgrade}
+          </button>
+          <button
+            className="btn secondary"
+            type="button"
+            onClick={() => navigate("/schriften")}
+          >
+            {t.backToFonts}
+          </button>
+        </div>
+      </main>
+    );
   if (!projectId)
     return <FontWorkspace key={draft.id} initialProject={draft} isDraft />;
   if (!project)
@@ -1123,7 +1148,7 @@ export default function FontStudio({ projectId }: { projectId?: string }) {
 }
 
 export function FontsPage() {
-  const { data, createFont, updateFont, deleteFont } = useStudio();
+  const { data, settings, updateFont, deleteFont } = useStudio();
   const [, navigate] = useLocation();
   const [renaming, setRenaming] = useState<FontProject | null>(null);
   const [deleting, setDeleting] = useState<FontProject | null>(null);
@@ -1134,6 +1159,12 @@ export function FontsPage() {
   }
 
   function duplicate(font: FontProject) {
+    if (data.fonts.length >= planLimits(settings.plan).fonts) {
+      toast.error(t.limitDescription, {
+        action: { label: t.limitUpgrade, onClick: () => navigate("/abo") },
+      });
+      return;
+    }
     const duplicateId =
       typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
         ? crypto.randomUUID()

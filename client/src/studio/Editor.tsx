@@ -51,6 +51,7 @@ import { EmptyState } from "./components";
 import ExportDialog from "./ExportDialog";
 import PaperPreview from "./PaperPreview";
 import { PaperControls } from "./PaperControls";
+import { NumberField } from "./components";
 import {
   missingGlyphs,
   pagePixelDimensions,
@@ -1184,19 +1185,13 @@ export default function Editor({ documentId }: { documentId: string }) {
                     <>
                       <label className="field">
                         <span>{t.size}</span>
-                        <input
-                          type="number"
-                          min="8"
-                          max="180"
+                        <NumberField
                           value={selectedElement.fontSize}
-                          onChange={event =>
+                          min={8}
+                          max={180}
+                          onChange={value =>
                             updateElement(selectedElement.id, {
-                              fontSize: numeric(
-                                event.target.value,
-                                selectedElement.fontSize,
-                                8,
-                                180
-                              ),
+                              fontSize: value,
                             })
                           }
                         />
@@ -1269,59 +1264,41 @@ export default function Editor({ documentId }: { documentId: string }) {
                       </div>
                       <label className="field">
                         <span>{t.lineHeight}</span>
-                        <input
-                          type="number"
-                          min="0.7"
-                          max="3"
-                          step="0.1"
+                        <NumberField
                           value={selectedElement.lineHeight}
-                          onChange={event =>
+                          min={0.7}
+                          max={3}
+                          decimals={1}
+                          onChange={value =>
                             updateElement(selectedElement.id, {
-                              lineHeight: numeric(
-                                event.target.value,
-                                selectedElement.lineHeight,
-                                0.7,
-                                3
-                              ),
+                              lineHeight: value,
                             })
                           }
                         />
                       </label>
                       <label className="field">
                         <span>{t.letterSpacing}</span>
-                        <input
-                          type="number"
-                          min="-4"
-                          max="20"
-                          step="0.2"
+                        <NumberField
                           value={selectedElement.letterSpacing}
-                          onChange={event =>
+                          min={-4}
+                          max={20}
+                          decimals={1}
+                          onChange={value =>
                             updateElement(selectedElement.id, {
-                              letterSpacing: numeric(
-                                event.target.value,
-                                selectedElement.letterSpacing,
-                                -4,
-                                20
-                              ),
+                              letterSpacing: value,
                             })
                           }
                         />
                       </label>
                       <label className="field">
                         <span>{t.paragraphSpacing}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="80"
+                        <NumberField
                           value={selectedElement.paragraphSpacing}
-                          onChange={event =>
+                          min={0}
+                          max={80}
+                          onChange={value =>
                             updateElement(selectedElement.id, {
-                              paragraphSpacing: numeric(
-                                event.target.value,
-                                selectedElement.paragraphSpacing,
-                                0,
-                                80
-                              ),
+                              paragraphSpacing: value,
                             })
                           }
                         />
@@ -1336,72 +1313,46 @@ export default function Editor({ documentId }: { documentId: string }) {
                   <span className="field-label">{t.position}</span>
                   <label className="field">
                     <span>{t.x}</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedElement.x)}
-                      onChange={event =>
-                        updateElement(selectedElement.id, {
-                          x: numeric(
-                            event.target.value,
-                            selectedElement.x,
-                            -3000,
-                            3000
-                          ),
-                        })
+                    <NumberField
+                      value={selectedElement.x}
+                      min={-3000}
+                      max={3000}
+                      onChange={value =>
+                        updateElement(selectedElement.id, { x: value })
                       }
                     />
                   </label>
                   <label className="field">
                     <span>{t.y}</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedElement.y)}
-                      onChange={event =>
-                        updateElement(selectedElement.id, {
-                          y: numeric(
-                            event.target.value,
-                            selectedElement.y,
-                            -3000,
-                            3000
-                          ),
-                        })
+                    <NumberField
+                      value={selectedElement.y}
+                      min={-3000}
+                      max={3000}
+                      onChange={value =>
+                        updateElement(selectedElement.id, { y: value })
                       }
                     />
                   </label>
                   <span className="field-label">{t.dimensions}</span>
                   <label className="field">
                     <span>{t.width}</span>
-                    <input
-                      type="number"
-                      min="20"
-                      value={Math.round(selectedElement.width)}
-                      onChange={event =>
-                        updateElement(selectedElement.id, {
-                          width: numeric(
-                            event.target.value,
-                            selectedElement.width,
-                            20,
-                            3000
-                          ),
-                        })
+                    <NumberField
+                      value={selectedElement.width}
+                      min={20}
+                      max={3000}
+                      onChange={value =>
+                        updateElement(selectedElement.id, { width: value })
                       }
                     />
                   </label>
                   <label className="field">
                     <span>{t.height}</span>
-                    <input
-                      type="number"
-                      min="18"
-                      value={Math.round(selectedElement.height)}
-                      onChange={event =>
-                        updateElement(selectedElement.id, {
-                          height: numeric(
-                            event.target.value,
-                            selectedElement.height,
-                            18,
-                            5000
-                          ),
-                        })
+                    <NumberField
+                      value={selectedElement.height}
+                      min={18}
+                      max={5000}
+                      onChange={value =>
+                        updateElement(selectedElement.id, { height: value })
                       }
                     />
                   </label>
@@ -1409,20 +1360,12 @@ export default function Editor({ documentId }: { documentId: string }) {
                     <span>{t.rotation}</span>
                     <span className="input-with-icon">
                       <RotateCw size={14} />
-                      <input
-                        type="number"
-                        min="-180"
-                        max="180"
-                        value={Math.round(selectedElement.rotation)}
-                        onChange={event =>
-                          updateElement(selectedElement.id, {
-                            rotation: numeric(
-                              event.target.value,
-                              selectedElement.rotation,
-                              -180,
-                              180
-                            ),
-                          })
+                      <NumberField
+                        value={selectedElement.rotation}
+                        min={-180}
+                        max={180}
+                        onChange={value =>
+                          updateElement(selectedElement.id, { rotation: value })
                         }
                       />
                       <em>°</em>
@@ -1441,24 +1384,6 @@ export default function Editor({ documentId }: { documentId: string }) {
                 </strong>
               </div>
             </div>
-            <label className="field template-select">
-              <span>{t.template}</span>
-              <select
-                aria-label={t.template}
-                defaultValue=""
-                onChange={event => {
-                  applyTemplate(event.target.value);
-                  event.currentTarget.value = "";
-                }}
-              >
-                <option value="">{t.selectTemplate}</option>
-                {data.templates.map(template => (
-                  <option value={template.id} key={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-            </label>
             <PaperControls
               paper={currentPage.paper}
               onChange={applyPaper}

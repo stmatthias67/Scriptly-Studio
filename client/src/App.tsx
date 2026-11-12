@@ -28,6 +28,7 @@ import {
   Loader2,
   AlertCircle,
   ArrowUpRight,
+  Crown,
 } from "lucide-react";
 import { StudioProvider, useStudio, saveStatusLabels } from "./studio/store";
 import { de, appCopy as c } from "./studio/locales/app";
@@ -46,12 +47,14 @@ const TemplatesPage = lazy(() =>
   import("./studio/PaperStudio").then(m => ({ default: m.TemplatesPage }))
 );
 const Settings = lazy(() => import("./studio/Settings"));
+const Subscription = lazy(() => import("./studio/Subscription"));
 const navItems = [
   { path: "/", title: de.overview, icon: LayoutDashboard },
   { path: "/schriften", title: de.fonts, icon: Type },
   { path: "/dokumente", title: de.documents, icon: FileText },
   { path: "/papierstudio", title: de.paper, icon: PanelsTopLeft },
   { path: "/vorlagen", title: de.templates, icon: Layers3 },
+  { path: "/abo", title: "Abo", icon: Crown },
 ];
 function Shell() {
   const [location, navigate] = useLocation();
@@ -149,7 +152,7 @@ function Shell() {
                   ? "page"
                   : undefined
               }
-              className={`nav-link ${(path === "/" ? location === "/" : location.startsWith(path)) ? "active" : ""} ${index === 4 ? "nav-after-divider" : ""}`}
+              className={`nav-link ${(path === "/" ? location === "/" : location.startsWith(path)) ? "active" : ""} ${index === 3 ? "nav-after-divider" : ""}`}
             >
               <Icon size={19} strokeWidth={1.6} />
               <span>{title}</span>
@@ -291,6 +294,7 @@ function Shell() {
               </Route>
               <Route path="/vorlagen" component={TemplatesPage} />
               <Route path="/einstellungen" component={Settings} />
+              <Route path="/abo" component={Subscription} />
               <Route path="/404" component={NotFound} />
               <Route component={NotFound} />
             </Switch>
