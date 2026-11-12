@@ -45,7 +45,26 @@ export const fontTexts = {
   pen: "Stift",
   eraser: "Radierer",
   penWidth: "Stiftstärke",
-  eraserHint: "Berühre eine Linie, um den ganzen Strich zu entfernen.",
+  eraserHint:
+    "Der Radierer löscht nur, was unter dem Kreis liegt. Fahre langsam über die Stelle, die weg soll.",
+  noCharactersYet: "Noch keine Zeichen gezeichnet",
+  penFine: "Fein",
+  penMedium: "Mittel",
+  penBold: "Kräftig",
+  guideTop: "Oberlinie",
+  guideMean: "Mittellinie",
+  guideBase: "Grundlinie",
+  guideBottom: "Unterlinie",
+  hintCapital:
+    "Großbuchstaben und Ziffern stehen auf der Grundlinie und reichen bis zur Oberlinie. Die blasse Vorlage zeigt die Größe.",
+  hintAscender:
+    "Der Bauch liegt zwischen Mittel- und Grundlinie, der Strich nach oben reicht bis zur Oberlinie.",
+  hintDescender:
+    "Der Bauch liegt zwischen Mittel- und Grundlinie, die Unterlänge reicht bis zur Unterlinie.",
+  hintLower:
+    "Kleinbuchstaben füllen genau das getönte Band zwischen Mittel- und Grundlinie.",
+  hintMark:
+    "Satzzeichen und Symbole sitzen auf der Grundlinie, so groß wie beim normalen Schreiben.",
   undo: "Rückgängig",
   redo: "Wiederholen",
   clear: "Zeichen leeren",

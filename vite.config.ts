@@ -28,11 +28,31 @@ function vitePluginPublicPlatformConfig(): Plugin {
   };
 }
 
+// Static hosts serve 404.html for paths they do not know. A copy of the app shell lets
+// a reloaded sub-page (for example after a phone wakes from sleep) open normally.
+function vitePluginSpaFallback(): Plugin {
+  return {
+    name: "scriptly-spa-fallback",
+    apply: "build",
+    enforce: "post",
+    generateBundle(_options, bundle) {
+      const index = bundle["index.html"];
+      if (index && index.type === "asset")
+        this.emitFile({
+          type: "asset",
+          fileName: "404.html",
+          source: index.source,
+        });
+    },
+  };
+}
+
 const plugins = [
   vitePluginPublicPlatformConfig(),
   react(),
   tailwindcss(),
   jsxLocPlugin(),
+  vitePluginSpaFallback(),
 ];
 
 export default defineConfig({

@@ -1,0 +1,40 @@
+.handwriting-sample {
+  align-items: center;
+  color: #1f2f29;
+  display: inline-flex;
+  height: 96px;
+  justify-content: center;
+  max-width: 100%;
+}
+.handwriting-sample svg {
+  display: block;
+  height: 100%;
+  overflow: visible;
+  width: auto;
+}
+.handwriting-sample .font-stroke,
+.handwriting-sample .font-stroke line {
+  fill: none;
+  stroke: #1f2f29;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.handwriting-sample .font-stroke-dot {
+  fill: #1f2f29;
+}
+.handwriting-sample.empty {
+  color: var(--muted);
+  font-size: 12px;
+  height: auto;
+}
+.mini-font-sample.handwriting-sample {
+  font-family: inherit;
+  height: 44px;
+}
+:root[data-theme="dark"] .handwriting-sample .font-stroke,
+:root[data-theme="dark"] .handwriting-sample .font-stroke line {
+  stroke: #e3ebe4;
+}
+:root[data-theme="dark"] .handwriting-sample .font-stroke-dot {
+  fill: #e3ebe4;
+}

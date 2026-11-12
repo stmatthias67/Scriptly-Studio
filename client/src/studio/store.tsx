@@ -242,14 +242,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     return doc;
   }
   function createFont(name = c.defaultFontName) {
-    const font: FontProject = {
-      id: uid(),
-      name,
-      glyphs: {},
-      settings: { ...defaultFontSettings },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    const font = newFontProject(name);
     mutate(d => ({ ...d, fonts: [font, ...d.fonts] }));
     return font;
   }
@@ -323,3 +316,29 @@ export const saveStatusLabels: Record<SaveStatus, string> = {
   saving: de.saving,
   error: de.saveError,
 };
+
+/** A fresh, unsaved font project. It is only stored once someone actually edits it. */
+export function newFontProject(name = c.defaultFontName): FontProject {
+  return {
+    id: uid(),
+    name,
+    glyphs: {},
+    settings: { ...defaultFontSettings },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+/** True once a draft font holds anything worth keeping: ink, a new name or changed settings. */
+export function fontHasEdits(font: FontProject): boolean {
+  const hasInk = Object.values(font.glyphs ?? {}).some(glyph =>
+    glyph?.variants?.some(variant =>
+      variant.some(stroke => stroke.points.length > 0)
+    )
+  );
+  return (
+    hasInk ||
+    font.name.trim() !== c.defaultFontName ||
+    JSON.stringify(font.settings) !== JSON.stringify(defaultFontSettings)
+  );
+}

@@ -49,7 +49,6 @@ const Settings = lazy(() => import("./studio/Settings"));
 const navItems = [
   { path: "/", title: de.overview, icon: LayoutDashboard },
   { path: "/schriften", title: de.fonts, icon: Type },
-  { path: "/schrift-erstellen", title: de.createFont, icon: PenLine },
   { path: "/dokumente", title: de.documents, icon: FileText },
   { path: "/papierstudio", title: de.paper, icon: PanelsTopLeft },
   { path: "/vorlagen", title: de.templates, icon: Layers3 },
@@ -70,9 +69,13 @@ function Shell() {
   const [help, setHelp] = useState(false);
   const [startApplied, setStartApplied] = useState(false);
   const compact = settings.sidebarCollapsed;
-  const title =
-    navItems.find(n => n.path !== "/" && location.startsWith(n.path))?.title ||
-    (location.startsWith("/einstellungen") ? de.settings : de.overview);
+  const isFontEditor =
+    location === "/schrift-erstellen" || /^\/schriften\/.+/.test(location);
+  const title = isFontEditor
+    ? de.createFont
+    : navItems.find(n => n.path !== "/" && location.startsWith(n.path))
+        ?.title ||
+      (location.startsWith("/einstellungen") ? de.settings : de.overview);
   const isEditor = /^\/dokumente\/.+/.test(location);
   useEffect(() => {
     setMobileOpen(false);
@@ -109,7 +112,7 @@ function Shell() {
     );
   return (
     <div
-      className={`app-shell ${compact ? "sidebar-collapsed" : ""} ${isEditor ? "editor-shell" : ""}`}
+      className={`app-shell ${compact ? "sidebar-collapsed" : ""} ${isEditor ? "editor-shell" : ""} ${isFontEditor ? "focus-shell" : ""}`}
     >
       {mobileOpen && (
         <button

@@ -1,5 +1,6 @@
 import * as opentype from "opentype.js";
 import type { FontProject, FontSettings, Glyph, Point, Stroke } from "./types";
+import { pressureWidth } from "./stroke-tools";
 
 const UNITS_PER_EM = 1000;
 const CAP_HEIGHT = 400;
@@ -123,37 +124,39 @@ function appendCircle(
   center: OutlinePoint,
   radius: number
 ) {
+  // Clockwise, like every capsule. With mixed directions the non-zero fill rule cancels
+  // overlaps and the pen line turns hollow wherever a join meets a segment.
   const control = radius * ROUND_KAPPA;
   path.moveTo(center.x + radius, center.y);
   path.curveTo(
     center.x + radius,
-    center.y + control,
-    center.x + control,
-    center.y + radius,
-    center.x,
-    center.y + radius
-  );
-  path.curveTo(
-    center.x - control,
-    center.y + radius,
-    center.x - radius,
-    center.y + control,
-    center.x - radius,
-    center.y
-  );
-  path.curveTo(
-    center.x - radius,
     center.y - control,
-    center.x - control,
+    center.x + control,
     center.y - radius,
     center.x,
     center.y - radius
   );
   path.curveTo(
-    center.x + control,
+    center.x - control,
     center.y - radius,
-    center.x + radius,
+    center.x - radius,
     center.y - control,
+    center.x - radius,
+    center.y
+  );
+  path.curveTo(
+    center.x - radius,
+    center.y + control,
+    center.x - control,
+    center.y + radius,
+    center.x,
+    center.y + radius
+  );
+  path.curveTo(
+    center.x + control,
+    center.y + radius,
+    center.x + radius,
+    center.y + control,
     center.x + radius,
     center.y
   );
@@ -208,18 +211,26 @@ function pathForStrokes(strokes: Stroke[], settings: FontSettings) {
   for (const stroke of strokes) {
     const sourcePoints = (stroke.points ?? []).filter(validPoint);
     if (!sourcePoints.length) continue;
-    const points = smoothPoints(sourcePoints, settings.smoothness).map(point =>
-      transformPoint(point, settings)
+    const smoothed = smoothPoints(sourcePoints, settings.smoothness);
+    const points = smoothed.map(point => transformPoint(point, settings));
+    const base = Math.max(0.5, number(stroke.width, 3));
+    // Pen pressure widens or narrows the line point by point, like real ink.
+    const radii = smoothed.map(
+      point => pressureWidth(base, point.pressure) * scale * 0.5
     );
-    const radius = Math.max(0.5, number(stroke.width, 3)) * scale * 0.5;
     if (points.length === 1) {
-      appendCircle(path, points[0], radius);
+      appendCircle(path, points[0], radii[0]);
       continue;
     }
     for (let index = 1; index < points.length; index += 1)
-      appendCapsule(path, points[index - 1], points[index], radius);
-    // Round joins make sharp directional changes look like a continuous marker line.
-    for (const point of points.slice(1, -1)) appendCircle(path, point, radius);
+      appendCapsule(
+        path,
+        points[index - 1],
+        points[index],
+        (radii[index - 1] + radii[index]) / 2
+      );
+    // Round joins make sharp directional changes look like a continuous pen line.
+    points.forEach((point, index) => appendCircle(path, point, radii[index]));
   }
   return path;
 }

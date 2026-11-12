@@ -35,7 +35,9 @@ import {
   variantForOccurrence,
 } from "./font-engine";
 import { Modal } from "./components";
-import { useStudio } from "./store";
+import { eraseStrokes } from "./stroke-tools";
+import { HandwritingSample, InkStroke } from "./HandwritingSample";
+import { fontHasEdits, newFontProject, useStudio } from "./store";
 import {
   fontCharacterGroups,
   fontTexts as t,
@@ -66,12 +68,6 @@ function getVariants(glyph: Glyph | undefined) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function pathData(stroke: Stroke) {
-  return stroke.points
-    .map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`)
-    .join(" ");
 }
 
 function projectCharacterCount(project: FontProject) {
@@ -122,39 +118,28 @@ function formatDate(timestamp: number) {
   }).format(timestamp);
 }
 
-function FontSample({
-  project,
-  variantIndex = 0,
-  className = "",
-}: {
-  project: FontProject;
-  variantIndex?: number;
-  className?: string;
-}) {
-  const [family, setFamily] = useState(() =>
-    getFontFamily(project.id, variantIndex)
-  );
-  useEffect(() => {
-    let active = true;
-    void loadFont(project, variantIndex)
-      .then(loadedFamily => {
-        if (active) setFamily(loadedFamily);
-      })
-      .catch(() => {
-        if (active) setFamily(getFontFamily(project.id, variantIndex));
-      });
-    return () => {
-      active = false;
-    };
-  }, [project, variantIndex]);
-  return (
-    <span
-      className={`font-sample ${className}`}
-      style={{ fontFamily: `"${family}", Caveat, cursive` }}
-    >
-      Abc
-    </span>
-  );
+/** Pen sizes in drawing units; the middle one matches a fineliner in documents. */
+const PEN_PRESETS = [
+  { width: 5, label: "penFine" },
+  { width: 8, label: "penMedium" },
+  { width: 13, label: "penBold" },
+] as const;
+
+/** The four writing lines of a school notebook, derived from the font baseline. */
+function guideLines(baseline: number) {
+  const base = clamp(baseline, 200, 360);
+  const top = Math.max(24, base - 255);
+  const mean = base - (base - top) * 0.52;
+  const bottom = Math.min(DRAWING_SIZE - 12, base + (base - top) * 0.36);
+  return { top, mean, base, bottom };
+}
+
+function writingHint(character: string) {
+  if (/\p{Lu}|\d/u.test(character)) return t.hintCapital;
+  if (/[bdfhkltß]/.test(character)) return t.hintAscender;
+  if (/[gjpqy]/.test(character)) return t.hintDescender;
+  if (/\p{Ll}/u.test(character)) return t.hintLower;
+  return t.hintMark;
 }
 
 function RangeSetting({
@@ -195,8 +180,15 @@ function RangeSetting({
   );
 }
 
-function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
+function FontWorkspace({
+  initialProject,
+  isDraft = false,
+}: {
+  initialProject: FontProject;
+  isDraft?: boolean;
+}) {
   const { updateFont } = useStudio();
+  const savedRef = useRef(!isDraft);
   const [, navigate] = useLocation();
   const projectRef = useRef<FontProject>(initialProject);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -214,8 +206,9 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
   const [undoStack, setUndoStack] = useState<StrokeHistory>([]);
   const [redoStack, setRedoStack] = useState<StrokeHistory>([]);
   const [tool, setTool] = useState<Tool>("pen");
-  const [penWidth, setPenWidth] = useState(8);
+  const [penWidth, setPenWidth] = useState<number>(PEN_PRESETS[1].width);
   const [showGuides, setShowGuides] = useState(true);
+  const [eraserAt, setEraserAt] = useState<Point | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
   const [previewText, setPreviewText] = useState<string>(t.previewDefault);
   const [previewFamilies, setPreviewFamilies] = useState<string[]>(() =>
@@ -236,6 +229,16 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
       const next = transform(projectRef.current);
       projectRef.current = next;
       setProject(next);
+      if (!savedRef.current) {
+        if (!fontHasEdits(next)) return next;
+        savedRef.current = true;
+        // Keep the editor mounted; only the address changes so a reload reopens this font.
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `/schriften/${next.id}`
+        );
+      }
       updateFont(next);
       return next;
     },
@@ -342,6 +345,7 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
     clientX: number;
     clientY: number;
     pressure: number;
+    pointerType?: string;
   }): Point | undefined {
     const bounds = svgRef.current?.getBoundingClientRect();
     if (!bounds || !bounds.width || !bounds.height) return undefined;
@@ -356,7 +360,11 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
         0,
         DRAWING_SIZE
       ),
-      pressure: sample.pressure > 0 ? sample.pressure : undefined,
+      // Only a pen reports real pressure; mice and fingers send fixed values.
+      pressure:
+        sample.pointerType === "pen" && sample.pressure > 0
+          ? sample.pressure
+          : undefined,
     };
   }
 
@@ -371,19 +379,13 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
     svg.addEventListener("touchmove", block, { passive: false });
   });
 
+  const eraserRadius = Math.max(6, penWidth * 1.2);
+  const guides = guideLines(project.settings.baseline);
+
   function eraseAt(point: Point) {
-    const radius = Math.max(14, penWidth * 1.75);
-    const next = strokesRef.current.filter(
-      stroke =>
-        !stroke.points.some(
-          candidate =>
-            Math.hypot(candidate.x - point.x, candidate.y - point.y) <=
-            radius + stroke.width / 2
-        )
-    );
-    if (next.length === strokesRef.current.length) return;
+    const next = eraseStrokes(strokesRef.current, point, eraserRadius);
+    if (next === strokesRef.current) return;
     replaceStrokes(next);
-    persistStrokes(next);
   }
 
   function beginDrawing(event: ReactPointerEvent<SVGSVGElement>) {
@@ -400,17 +402,15 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
     }
     replaceStrokes([
       ...strokesRef.current,
-      {
-        width: Math.max(
-          1,
-          penWidth * (point.pressure ? 0.55 + point.pressure * 0.45 : 1)
-        ),
-        points: [point],
-      },
+      { width: penWidth, points: [point] },
     ]);
   }
 
   function moveDrawing(event: ReactPointerEvent<SVGSVGElement>) {
+    if (tool === "eraser") {
+      const hover = localPoint(event);
+      setEraserAt(hover ?? null);
+    }
     if (activePointer.current !== event.pointerId) return;
     event.preventDefault();
     // Pens report many samples per frame; use all of them so fast strokes keep
@@ -762,43 +762,53 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
               onPointerMove={moveDrawing}
               onPointerUp={endDrawing}
               onPointerCancel={endDrawing}
+              onPointerLeave={() => setEraserAt(null)}
             >
               {showGuides && (
                 <g className="font-guides" aria-hidden="true">
-                  <line
-                    x1="0"
-                    x2={DRAWING_SIZE}
-                    y1={project.settings.baseline}
-                    y2={project.settings.baseline}
-                    className="baseline"
+                  <rect
+                    className="font-guide-band"
+                    x="0"
+                    width={DRAWING_SIZE}
+                    y={guides.mean}
+                    height={guides.base - guides.mean}
                   />
-                  <line
-                    x1="0"
-                    x2={DRAWING_SIZE}
-                    y1={Math.max(20, project.settings.baseline - 165)}
-                    y2={Math.max(20, project.settings.baseline - 165)}
-                  />
-                  <line x1="200" x2="200" y1="0" y2={DRAWING_SIZE} />
-                  <line x1="0" x2={DRAWING_SIZE} y1="45" y2="45" />
+                  <text
+                    className="font-template"
+                    x={DRAWING_SIZE / 2}
+                    y={guides.base}
+                    fontSize={(guides.base - guides.top) / 0.68}
+                    textAnchor="middle"
+                  >
+                    {activeCharacter}
+                  </text>
+                  {(
+                    [
+                      ["top", guides.top, t.guideTop],
+                      ["mean", guides.mean, t.guideMean],
+                      ["base", guides.base, t.guideBase],
+                      ["bottom", guides.bottom, t.guideBottom],
+                    ] as const
+                  ).map(([key, y, label]) => (
+                    <g key={key} className={`font-guide font-guide-${key}`}>
+                      <line x1="0" x2={DRAWING_SIZE} y1={y} y2={y} />
+                      <text x="8" y={y - 5}>
+                        {label}
+                      </text>
+                    </g>
+                  ))}
                 </g>
               )}
-              {strokes.map((stroke, index) =>
-                stroke.points.length === 1 ? (
-                  <circle
-                    key={index}
-                    cx={stroke.points[0].x}
-                    cy={stroke.points[0].y}
-                    r={stroke.width / 2}
-                    className="font-stroke"
-                  />
-                ) : (
-                  <path
-                    key={index}
-                    d={pathData(stroke)}
-                    className="font-stroke"
-                    strokeWidth={stroke.width}
-                  />
-                )
+              {strokes.map((stroke, index) => (
+                <InkStroke key={index} stroke={stroke} />
+              ))}
+              {tool === "eraser" && eraserAt && (
+                <circle
+                  className="font-eraser-ring"
+                  cx={eraserAt.x}
+                  cy={eraserAt.y}
+                  r={eraserRadius}
+                />
               )}
             </svg>
             {!containsInk(strokes) && (
@@ -832,17 +842,24 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
                 {t.eraser}
               </button>
             </div>
-            <label className="font-width-control">
-              <span>{t.penWidth}</span>
-              <input
-                type="range"
-                min="2"
-                max="28"
-                value={penWidth}
-                onChange={event => setPenWidth(Number(event.target.value))}
-              />
-              <output>{penWidth}</output>
-            </label>
+            <div
+              className="font-width-presets"
+              role="group"
+              aria-label={t.penWidth}
+            >
+              {PEN_PRESETS.map(preset => (
+                <button
+                  key={preset.width}
+                  type="button"
+                  className={penWidth === preset.width ? "active" : ""}
+                  onClick={() => setPenWidth(preset.width)}
+                  aria-pressed={penWidth === preset.width}
+                >
+                  <i style={{ height: preset.width / 2 }} aria-hidden="true" />
+                  {t[preset.label]}
+                </button>
+              ))}
+            </div>
             <div className="font-tool-actions">
               <button
                 className="icon-btn"
@@ -886,12 +903,10 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
               {t.saveCharacter}
             </button>
           </div>
-          {tool === "eraser" && (
-            <p className="font-inline-hint">
-              <Eraser size={14} />
-              {t.eraserHint}
-            </p>
-          )}
+          <p className="font-inline-hint">
+            {tool === "eraser" ? <Eraser size={14} /> : <PenLine size={14} />}
+            {tool === "eraser" ? t.eraserHint : writingHint(activeCharacter)}
+          </p>
           <p className="font-variant-note">
             <CircleHelp size={14} />
             {t.variantDescription}
@@ -1079,27 +1094,16 @@ function FontWorkspace({ initialProject }: { initialProject: FontProject }) {
 }
 
 export default function FontStudio({ projectId }: { projectId?: string }) {
-  const { data, createFont } = useStudio();
+  const { data } = useStudio();
   const [, navigate] = useLocation();
-  const creating = useRef(false);
+  // A new font starts as an unsaved draft: nothing is stored until the first edit.
+  const [draft] = useState(() => newFontProject());
   const project = projectId
     ? data.fonts.find(font => font.id === projectId)
     : undefined;
 
-  useEffect(() => {
-    if (projectId || creating.current) return;
-    creating.current = true;
-    const created = createFont();
-    navigate(`/schriften/${created.id}`);
-  }, [createFont, navigate, projectId]);
-
   if (!projectId)
-    return (
-      <main className="font-route-state page-shell">
-        <p className="eyebrow">{t.studioEyebrow}</p>
-        <h1>{t.loadingNew}</h1>
-      </main>
-    );
+    return <FontWorkspace key={draft.id} initialProject={draft} isDraft />;
   if (!project)
     return (
       <main className="font-route-state page-shell">
@@ -1126,8 +1130,7 @@ export function FontsPage() {
   const [name, setName] = useState("");
 
   function create() {
-    const project = createFont();
-    navigate(`/schriften/${project.id}`);
+    navigate("/schrift-erstellen");
   }
 
   function duplicate(font: FontProject) {
@@ -1201,7 +1204,10 @@ export function FontsPage() {
           {data.fonts.map(font => (
             <article className="font-gallery-card card" key={font.id}>
               <div className="font-gallery-paper">
-                <FontSample project={font} />
+                <HandwritingSample
+                  project={font}
+                  emptyLabel={t.noCharactersYet}
+                />
                 <span>
                   {projectCharacterCount(font)} {t.completed}
                 </span>
