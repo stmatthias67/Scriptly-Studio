@@ -102,6 +102,9 @@ const element = z.object({
     .optional(),
   checked: z.boolean().optional(),
   locked: z.boolean().optional(),
+  wordSpacing: finite.min(-50).max(200).optional(),
+  widthScale: finite.min(30).max(300).optional(),
+  slant: finite.min(-45).max(45).optional(),
 });
 const stamp = finite.min(0);
 const fontSettings = z.object({

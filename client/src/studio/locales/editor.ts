@@ -56,7 +56,10 @@ export const editorText = {
   center: "Zentriert",
   right: "Rechtsbündig",
   lineHeight: "Zeilenabstand",
-  letterSpacing: "Zeichenabstand",
+  letterSpacing: "Zeichenabstand (px)",
+  wordSpacing: "Wortabstand (px)",
+  widthScale: "Zeichenbreite (%)",
+  slant: "Neigung (°)",
   paragraphSpacing: "Absatzabstand",
   rotation: "Drehung",
   position: "Position",
@@ -119,11 +122,8 @@ export const editorText = {
   goodNotesShared: "PDF geteilt. In GoodNotes landet es als neues Notizbuch.",
   goodNotesDownloaded:
     "PDF gespeichert. In GoodNotes: Neu → Importieren und die Datei auswählen.",
-  editableInk: "Handschrift als bearbeitbare Striche (für GoodNotes)",
-  editableInkHint:
-    "Text in deinen eigenen Schriften wird als echte Stiftstriche gespeichert. In GoodNotes lassen sie sich auswählen, umfärben und mit dem Radierer löschen.",
-  editableInfo:
-    "Das Papier bleibt Hintergrund, deine Handschrift liegt als PDF-Tintenanmerkungen darüber. GoodNotes übernimmt sie beim Import als eigene Striche.",
+  goodNotesInfo:
+    "Deine Handschrift wird als echte Stiftstriche gespeichert, das Papier als Hintergrund. In GoodNotes lassen sich die Striche auswählen, umfärben und radieren. Auf iPad und iPhone öffnet sich das Teilen-Menü: dort GoodNotes wählen.",
   editableFlatHint:
     "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung und sind deshalb nicht radierbar, sondern Teil des Hintergrunds.",
   exportProHint: "300 dpi sowie PNG und JPEG gibt es mit Pro.",

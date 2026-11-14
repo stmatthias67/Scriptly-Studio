@@ -5,7 +5,6 @@ import {
   FileImage,
   FileText,
   LoaderCircle,
-  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "./components";
@@ -16,7 +15,7 @@ import { buildEditablePdf } from "./goodnotes-export";
 import { paperDimensions } from "./types";
 import { editorText as t } from "./locales/editor";
 
-export type ExportFormat = "pdf" | "png" | "jpeg";
+export type ExportFormat = "pdf" | "goodnotes" | "png" | "jpeg";
 export type ExportScope = "all" | "current" | "selected";
 
 export interface ExportDialogProps {
@@ -300,11 +299,10 @@ export default function ExportDialog({
 }: ExportDialogProps) {
   const { settings } = useStudio();
   const isPro = settings.plan !== "free";
-  const [format, setFormat] = useState<ExportFormat>("pdf");
+  const [format, setFormat] = useState<ExportFormat>("goodnotes");
   const [scope, setScope] = useState<ExportScope>("all");
   const [range, setRange] = useState("");
   const [dpi, setDpi] = useState(150);
-  const [editable, setEditable] = useState(true);
   const [filename, setFilename] = useState(document.title || t.untitledFile);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{
@@ -348,50 +346,11 @@ export default function ExportDialog({
   ].join(" / ");
 
   const reportFlat = (output: PdfOutput) => {
-    if (editable && output.flatBlocks > 0)
+    if (output.flatBlocks > 0)
       toast.message(
         t.editableFlatHint.replace("{count}", String(output.flatBlocks)),
         { duration: 9000 }
       );
-  };
-
-  const shareToGoodNotes = async () => {
-    if (!filename.trim()) {
-      setError(t.filenameRequired);
-      return;
-    }
-    if (!indexes.length) {
-      setError(t.invalidPages);
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      const { result, output } = await sendPdfToGoodNotes(
-        document,
-        fonts,
-        indexes,
-        sanitizeFilename(filename),
-        dpi,
-        (current, total) => setProgress({ current, total }),
-        editable
-      );
-      reportFlat(output);
-      if (result === "shared") toast.success(t.goodNotesShared);
-      if (result === "downloaded")
-        toast.message(t.goodNotesDownloaded, { duration: 9000 });
-      if (result !== "cancelled") onClose();
-    } catch (reason) {
-      const message =
-        reason instanceof Error && reason.message
-          ? reason.message
-          : t.exportFailed;
-      setError(message);
-      toast.error(message);
-    } finally {
-      setBusy(false);
-      setProgress(null);
-    }
   };
 
   const startExport = async () => {
@@ -413,17 +372,35 @@ export default function ExportDialog({
     try {
       const updateProgress = (current: number, total: number) =>
         setProgress({ current, total });
+      if (format === "goodnotes") {
+        // GoodNotes always carries the handwriting as editable pen strokes. On iPad
+        // and iPhone the share sheet hands it straight to GoodNotes.
+        const { result, output } = await sendPdfToGoodNotes(
+          document,
+          fonts,
+          indexes,
+          safeFilename,
+          dpi,
+          updateProgress,
+          true
+        );
+        reportFlat(output);
+        if (result === "cancelled") return;
+        toast.success(
+          result === "shared" ? t.goodNotesShared : t.goodNotesDownloaded
+        );
+        onClose();
+        return;
+      }
       if (format === "pdf")
-        reportFlat(
-          await exportPdf(
-            document,
-            fonts,
-            indexes,
-            safeFilename,
-            dpi,
-            updateProgress,
-            editable
-          )
+        await exportPdf(
+          document,
+          fonts,
+          indexes,
+          safeFilename,
+          dpi,
+          updateProgress,
+          false
         );
       else
         await exportImages(
@@ -475,6 +452,7 @@ export default function ExportDialog({
             onChange={event => setFormat(event.target.value as ExportFormat)}
             disabled={busy}
           >
+            <option value="goodnotes">GoodNotes</option>
             <option value="pdf">PDF</option>
             <option value="png" disabled={!isPro}>
               PNG{isPro ? "" : " · Pro"}
@@ -551,25 +529,16 @@ export default function ExportDialog({
         <p className="muted export-paper-size">
           {t.paperSize}: {sizeSummary}
         </p>
-        {format === "pdf" && (
-          <label className="export-editable">
-            <input
-              type="checkbox"
-              checked={editable}
-              disabled={busy}
-              onChange={event => setEditable(event.target.checked)}
-            />
-            <span>
-              <strong>{t.editableInk}</strong>
-              <small>{t.editableInkHint}</small>
-            </span>
-          </label>
-        )}
         <p className="export-info">
-          {format === "pdf" ? (
+          {format === "goodnotes" ? (
             <>
               <FileText size={16} />
-              {editable ? t.editableInfo : t.pdfInfo}
+              {t.goodNotesInfo}
+            </>
+          ) : format === "pdf" ? (
+            <>
+              <FileText size={16} />
+              {t.pdfInfo}
             </>
           ) : (
             <>
@@ -595,16 +564,6 @@ export default function ExportDialog({
           <button className="btn secondary" onClick={onClose} disabled={busy}>
             {t.cancel}
           </button>
-          {format === "pdf" && (
-            <button
-              className="btn secondary"
-              onClick={() => void shareToGoodNotes()}
-              disabled={busy || !indexes.length}
-            >
-              <Share2 size={16} />
-              {t.goodNotesSend}
-            </button>
-          )}
           <button
             className="btn primary"
             onClick={() => void startExport()}

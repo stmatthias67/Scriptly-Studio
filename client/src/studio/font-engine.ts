@@ -21,18 +21,32 @@ function number(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function normalizedSettings(settings: FontSettings): FontSettings {
-  return {
-    spacing: number(settings.spacing, 25),
-    wordSpacing: Math.max(0, number(settings.wordSpacing, 280)),
-    width: Math.max(30, number(settings.width, 100)),
-    slant: Math.max(-45, Math.min(45, number(settings.slant, 0))),
-    baseline: Math.max(0, Math.min(CAP_HEIGHT, number(settings.baseline, 300))),
-    smoothness: Math.max(0, Math.min(100, number(settings.smoothness, 0))),
-    variation: Math.max(0, Math.min(100, number(settings.variation, 0))),
-    size: Math.max(30, number(settings.size, 100)),
-  };
+/**
+ * Fonts no longer carry their own size, spacing, slant or smoothing: every font is
+ * built the same way, straight from the strokes as drawn, and those adjustments are
+ * made per text block in documents. Stored values are ignored on purpose.
+ */
+const FIXED_FONT_SETTINGS: FontSettings = {
+  spacing: 0,
+  wordSpacing: 280,
+  width: 100,
+  slant: 0,
+  baseline: 300,
+  smoothness: 0,
+  variation: 0,
+  size: 100,
+};
+
+/** Space kept on each side of a glyph's ink, in font units (0.04 em). */
+const SIDE_BEARING = 40;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function normalizedSettings(_settings?: FontSettings): FontSettings {
+  return FIXED_FONT_SETTINGS;
 }
+
+/** The writing baseline every font is drawn and built on (drawing units). */
+export const FONT_BASELINE = FIXED_FONT_SETTINGS.baseline;
 
 function sourceScale(settings: FontSettings) {
   return (UNITS_PER_EM / CAP_HEIGHT) * (settings.size / 100);
@@ -205,14 +219,43 @@ function appendCapsule(
   path.close();
 }
 
-function pathForStrokes(strokes: Stroke[], settings: FontSettings) {
+/**
+ * Where a glyph's ink starts and ends horizontally (font units, pen width
+ * included). Glyphs are cropped to their ink, so it does not matter where on the
+ * drawing area a letter was written: only its own width counts in the text.
+ */
+function inkExtent(strokes: Stroke[], settings: FontSettings) {
+  const scale = sourceScale(settings);
+  let left = Infinity;
+  let right = -Infinity;
+  for (const stroke of strokes) {
+    const base = Math.max(0.5, number(stroke.width, 3));
+    for (const point of smoothPoints(
+      (stroke.points ?? []).filter(validPoint),
+      settings.smoothness
+    )) {
+      const x = transformPoint(point, settings).x;
+      const radius = pressureWidth(base, point.pressure) * scale * 0.5;
+      left = Math.min(left, x - radius);
+      right = Math.max(right, x + radius);
+    }
+  }
+  return Number.isFinite(left)
+    ? { shift: SIDE_BEARING - left, width: right - left }
+    : { shift: 0, width: 0 };
+}
+
+function pathForStrokes(strokes: Stroke[], settings: FontSettings, shift = 0) {
   const path = new opentype.Path();
   const scale = sourceScale(settings);
   for (const stroke of strokes) {
     const sourcePoints = (stroke.points ?? []).filter(validPoint);
     if (!sourcePoints.length) continue;
     const smoothed = smoothPoints(sourcePoints, settings.smoothness);
-    const points = smoothed.map(point => transformPoint(point, settings));
+    const points = smoothed.map(point => {
+      const outline = transformPoint(point, settings);
+      return { x: outline.x + shift, y: outline.y };
+    });
     const base = Math.max(0.5, number(stroke.width, 3));
     // Pen pressure widens or narrows the line point by point, like real ink.
     const radii = smoothed.map(
@@ -252,20 +295,11 @@ function emptyNotdef() {
   return new opentype.Glyph({ name: ".notdef", advanceWidth: 600, path });
 }
 
-function advanceFor(path: opentype.Path, settings: FontSettings) {
-  const bounds = path.getBoundingBox();
-  const minimum = 250 * sourceScale(settings) * (settings.width / 100);
-  const rightSideBearing = 70;
-  const leftSideBearing = 30;
-  const content = Number.isFinite(bounds.x2)
-    ? bounds.x2 - Math.min(bounds.x1, 0)
-    : 0;
+function advanceFor(inkWidth: number, settings: FontSettings) {
+  // A dot or comma still needs a little room; everything else is ink plus bearings.
   return Math.max(
-    180,
-    Math.round(
-      Math.max(minimum, content + leftSideBearing + rightSideBearing) +
-        settings.spacing
-    )
+    120,
+    Math.round(inkWidth + 2 * SIDE_BEARING + settings.spacing)
   );
 }
 
@@ -311,13 +345,14 @@ export function buildFont(
   for (const character of characters) {
     const strokes = selectedStrokes(project.glyphs[character], variantIndex);
     if (!strokes.some(stroke => stroke.points?.some(validPoint))) continue;
-    const path = pathForStrokes(strokes, settings);
+    const extent = inkExtent(strokes, settings);
+    const path = pathForStrokes(strokes, settings, extent.shift);
     if (!path.commands.length) continue;
     glyphs.push(
       new opentype.Glyph({
         name: glyphName(character),
         unicode: character.codePointAt(0),
-        advanceWidth: advanceFor(path, settings),
+        advanceWidth: advanceFor(extent.width, settings),
         path,
       })
     );
@@ -480,6 +515,7 @@ export function glyphInkStrokes(
   const settings = normalizedSettings(project.settings);
   const scale = sourceScale(settings);
   const strokes = selectedStrokes(project.glyphs?.[character], variantIndex);
+  const { shift } = inkExtent(strokes, settings);
   const result: GlyphInkStroke[] = [];
   for (const stroke of strokes) {
     const source = (stroke.points ?? []).filter(validPoint);
@@ -492,7 +528,10 @@ export function glyphInkStrokes(
     result.push({
       points: smoothed.map(point => {
         const outline = transformPoint(point, settings);
-        return { x: outline.x / UNITS_PER_EM, y: outline.y / UNITS_PER_EM };
+        return {
+          x: (outline.x + shift) / UNITS_PER_EM,
+          y: outline.y / UNITS_PER_EM,
+        };
       }),
       width: (average * scale) / UNITS_PER_EM,
     });

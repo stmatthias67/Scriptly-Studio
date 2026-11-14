@@ -48,6 +48,12 @@ Nach `pnpm build:static` prüft `node tests/production-check.mjs` den gebauten P
 
 Eine echte `.goodnotes`-Datei wird nicht erzeugt: Das Format ist proprietär und nicht dokumentiert. Stattdessen schreibt der Export eine PDF, in der Text aus eigenen Handschriften als PDF-Tintenanmerkungen (`/Subtype /Ink`, ISO 32000) liegt, also als echte Vektorstriche statt als Pixel. GoodNotes und die meisten Notiz-Apps übernehmen solche Anmerkungen beim Import als eigene Stiftstriche. Papier, Bilder, Formen und Text in eingebauten Schriften bleiben ein Hintergrundbild.
 
-Bedienung: Im Dokument „Exportieren“ wählen, Format PDF, Häkchen „Handschrift als bearbeitbare Striche (für GoodNotes)“ gesetzt lassen. „An GoodNotes senden“ öffnet auf iPad/iPhone das Teilen-Menü (dort GoodNotes wählen), „Export starten“ lädt die PDF herunter (in GoodNotes: Neu → Importieren). Ein Textblock wird nur dann als Striche exportiert, wenn jedes seiner Zeichen in der Schrift gezeichnet ist; sonst bleibt er Hintergrund, und der Export meldet das.
+Bedienung: Im Dokument „Exportieren“ wählen und beim Format „GoodNotes“ lassen (Standard). „Export starten“ öffnet auf iPad/iPhone das Teilen-Menü, dort GoodNotes wählen; auf anderen Geräten wird die Datei heruntergeladen (in GoodNotes: Neu → Importieren). Ein Textblock wird nur dann als Striche exportiert, wenn jedes seiner Zeichen in der Schrift gezeichnet ist; sonst bleibt er Hintergrund, und der Export meldet das.
 
 Aufbau: `font-engine.ts` (`glyphInkStrokes`) liefert die Mittellinien der Zeichen, `render.ts` (`inkStrokesForElement`) setzt sie mit derselben Zeilen-, Varianten- und Ausrichtungslogik wie die Vorschau auf die Seite, `goodnotes-export.ts` rendert den Hintergrund ohne diese Texte, und `ink-pdf.ts` schreibt die PDF samt Darstellungsstreams.
+
+## Schriften und Textblöcke
+
+Schriften haben keine eigenen Einstellungen mehr (Größe, Grundlinie, Abstände, Breite, Neigung, Glättung). Jede Schrift wird gleich gebaut: Jedes Zeichen wird eng auf seine Tinte zugeschnitten, mit 0,04 Geviert Rand je Seite. Wo auf der Zeichenfläche ein Buchstabe steht, spielt also keine Rolle. Größe, Zeichenabstand, Wortabstand, Zeichenbreite und Neigung stellt man pro Textblock im Dokument ein (Eigenschaften rechts). Beim Zeichnen zeigen eine blasse Vorlage sowie Ober-, Mittel-, Grund-, Unterlinie und zwei „Breite“-Linien, wie groß und breit ein Zeichen werden soll; die Stiftstärke ist frei zwischen 1 und 30 einstellbar.
+
+Die frühere Werkzeugleiste im Dokument-Editor (Text, Überschriften, Liste, Checkliste, Datum, Bild und Formen) ist entfernt. Was jeder Knopf getan hat, steht in `docs/dokument-werkzeugleiste.md`.

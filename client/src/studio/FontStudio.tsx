@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -20,21 +21,20 @@ import {
   PenLine,
   Plus,
   Redo2,
-  RotateCcw,
-  SlidersHorizontal,
   Trash2,
   Undo2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import type { FontProject, FontSettings, Glyph, Point, Stroke } from "./types";
+import type { FontProject, Glyph, Point, Stroke } from "./types";
 import {
   buildFont,
+  FONT_BASELINE,
   getFontFamily,
   loadFont,
   variantForOccurrence,
 } from "./font-engine";
-import { Modal } from "./components";
+import { Modal, NumberField } from "./components";
 import { eraseStrokes } from "./stroke-tools";
 import { planLimits } from "./plan";
 import { HandwritingSample, InkStroke } from "./HandwritingSample";
@@ -119,12 +119,10 @@ function formatDate(timestamp: number) {
   }).format(timestamp);
 }
 
-/** Pen sizes in drawing units; the middle one matches a fineliner in documents. */
-const PEN_PRESETS = [
-  { width: 5, label: "penFine" },
-  { width: 8, label: "penMedium" },
-  { width: 13, label: "penBold" },
-] as const;
+/** Pen width range in drawing units; 8 matches a fineliner in documents. */
+const PEN_MIN = 1;
+const PEN_MAX = 30;
+const PEN_DEFAULT = 8;
 
 /** The four writing lines of a school notebook, derived from the font baseline. */
 function guideLines(baseline: number) {
@@ -141,44 +139,6 @@ function writingHint(character: string) {
   if (/[gjpqy]/.test(character)) return t.hintDescender;
   if (/\p{Ll}/u.test(character)) return t.hintLower;
   return t.hintMark;
-}
-
-function RangeSetting({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  suffix = "",
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  suffix?: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="font-range">
-      <span>
-        {label}
-        <output>
-          {value}
-          {suffix}
-        </output>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={event => onChange(Number(event.target.value))}
-      />
-    </label>
-  );
 }
 
 function FontWorkspace({
@@ -207,9 +167,14 @@ function FontWorkspace({
   const [undoStack, setUndoStack] = useState<StrokeHistory>([]);
   const [redoStack, setRedoStack] = useState<StrokeHistory>([]);
   const [tool, setTool] = useState<Tool>("pen");
-  const [penWidth, setPenWidth] = useState<number>(PEN_PRESETS[1].width);
+  const [penWidth, setPenWidth] = useState<number>(PEN_DEFAULT);
   const [showGuides, setShowGuides] = useState(true);
   const [eraserAt, setEraserAt] = useState<Point | null>(null);
+  const templateRef = useRef<SVGTextElement | null>(null);
+  const [templateBox, setTemplateBox] = useState<{
+    left: number;
+    right: number;
+  } | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
   const [previewText, setPreviewText] = useState<string>(t.previewDefault);
   const [previewFamilies, setPreviewFamilies] = useState<string[]>(() =>
@@ -218,6 +183,30 @@ function FontWorkspace({
     )
   );
   const [fontName, setFontName] = useState(initialProject.name);
+
+  // The width guides follow the template letter, so they show how wide this
+  // particular character should be (an "m" is wider than an "i").
+  useLayoutEffect(() => {
+    let live = true;
+    const measure = () => {
+      const box = templateRef.current?.getBBox();
+      if (!live) return;
+      if (!box || !box.width) {
+        setTemplateBox(null);
+        return;
+      }
+      const pad = 4;
+      setTemplateBox({
+        left: Math.max(2, box.x - pad),
+        right: Math.min(DRAWING_SIZE - 2, box.x + box.width + pad),
+      });
+    };
+    measure();
+    void document.fonts?.ready.then(measure);
+    return () => {
+      live = false;
+    };
+  }, [activeCharacter, showGuides]);
 
   const replaceStrokes = useCallback((next: Stroke[]) => {
     const copy = cloneStrokes(next);
@@ -381,7 +370,7 @@ function FontWorkspace({
   });
 
   const eraserRadius = Math.max(6, penWidth * 1.2);
-  const guides = guideLines(project.settings.baseline);
+  const guides = guideLines(FONT_BASELINE);
 
   function eraseAt(point: Point) {
     const next = eraseStrokes(strokesRef.current, point, eraserRadius);
@@ -534,14 +523,6 @@ function FontWorkspace({
       return { ...current, glyphs, updatedAt: Date.now() };
     });
     setActiveVariant(nextIndex);
-  }
-
-  function changeSetting(key: keyof FontSettings, value: number) {
-    commitProject(current => ({
-      ...current,
-      settings: { ...current.settings, [key]: value },
-      updatedAt: Date.now(),
-    }));
   }
 
   function saveName() {
@@ -775,6 +756,7 @@ function FontWorkspace({
                     height={guides.base - guides.mean}
                   />
                   <text
+                    ref={templateRef}
                     className="font-template"
                     x={DRAWING_SIZE / 2}
                     y={guides.base}
@@ -783,6 +765,26 @@ function FontWorkspace({
                   >
                     {activeCharacter}
                   </text>
+                  {templateBox && (
+                    <g className="font-guide font-guide-width">
+                      {[templateBox.left, templateBox.right].map((x, index) => (
+                        <line
+                          key={index}
+                          x1={x}
+                          x2={x}
+                          y1={guides.top - 12}
+                          y2={guides.bottom}
+                        />
+                      ))}
+                      <text
+                        x={(templateBox.left + templateBox.right) / 2}
+                        y={guides.bottom + 10}
+                        textAnchor="middle"
+                      >
+                        {t.guideWidth}
+                      </text>
+                    </g>
+                  )}
                   {(
                     [
                       ["top", guides.top, t.guideTop],
@@ -843,24 +845,33 @@ function FontWorkspace({
                 {t.eraser}
               </button>
             </div>
-            <div
-              className="font-width-presets"
-              role="group"
-              aria-label={t.penWidth}
-            >
-              {PEN_PRESETS.map(preset => (
-                <button
-                  key={preset.width}
-                  type="button"
-                  className={penWidth === preset.width ? "active" : ""}
-                  onClick={() => setPenWidth(preset.width)}
-                  aria-pressed={penWidth === preset.width}
-                >
-                  <i style={{ height: preset.width / 2 }} aria-hidden="true" />
-                  {t[preset.label]}
-                </button>
-              ))}
-            </div>
+            <label className="font-width-slider">
+              <span>{t.penWidth}</span>
+              <i
+                aria-hidden="true"
+                style={{
+                  width: Math.max(2, penWidth),
+                  height: Math.max(2, penWidth),
+                }}
+              />
+              <input
+                type="range"
+                min={PEN_MIN}
+                max={PEN_MAX}
+                step={0.5}
+                value={penWidth}
+                aria-label={t.penWidth}
+                onChange={event => setPenWidth(Number(event.target.value))}
+              />
+              <NumberField
+                value={penWidth}
+                min={PEN_MIN}
+                max={PEN_MAX}
+                decimals={1}
+                aria-label={t.penWidth}
+                onChange={setPenWidth}
+              />
+            </label>
             <div className="font-tool-actions">
               <button
                 className="icon-btn"
@@ -913,75 +924,6 @@ function FontWorkspace({
             {t.variantDescription}
           </p>
         </section>
-
-        <aside className="font-settings card">
-          <div className="font-side-heading">
-            <div>
-              <p className="eyebrow">{t.settings}</p>
-              <h2>
-                <SlidersHorizontal size={17} />
-                {project.name}
-              </h2>
-            </div>
-          </div>
-          <RangeSetting
-            label={t.size}
-            value={project.settings.size}
-            min={30}
-            max={200}
-            suffix="%"
-            onChange={value => changeSetting("size", value)}
-          />
-          <RangeSetting
-            label={t.baseline}
-            value={project.settings.baseline}
-            min={200}
-            max={360}
-            onChange={value => changeSetting("baseline", value)}
-          />
-          <RangeSetting
-            label={t.spacing}
-            value={project.settings.spacing}
-            min={-200}
-            max={500}
-            onChange={value => changeSetting("spacing", value)}
-          />
-          <RangeSetting
-            label={t.wordSpacing}
-            value={project.settings.wordSpacing}
-            min={0}
-            max={1000}
-            onChange={value => changeSetting("wordSpacing", value)}
-          />
-          <RangeSetting
-            label={t.width}
-            value={project.settings.width}
-            min={30}
-            max={200}
-            suffix="%"
-            onChange={value => changeSetting("width", value)}
-          />
-          <RangeSetting
-            label={t.slant}
-            value={project.settings.slant}
-            min={-45}
-            max={45}
-            suffix="°"
-            onChange={value => changeSetting("slant", value)}
-          />
-          <RangeSetting
-            label={t.smoothness}
-            value={project.settings.smoothness}
-            min={0}
-            max={100}
-            suffix="%"
-            onChange={value => changeSetting("smoothness", value)}
-          />
-          <p className="font-setting-note">
-            <RotateCcw size={14} />
-            {t.variationDescription}
-          </p>
-        </aside>
       </div>
 
       <section className="font-preview card">

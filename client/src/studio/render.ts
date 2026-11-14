@@ -10,7 +10,6 @@ import {
   glyphInkStrokes,
   inkedVariants,
   loadFontVariants,
-  variantFontCount,
   variantForOccurrence,
 } from "./font-engine";
 
@@ -138,7 +137,18 @@ export function splitTextForHeight(
     PageElement,
     "text" | "width" | "height" | "fontSize" | "lineHeight" | "paragraphSpacing"
   > &
-    Partial<Pick<PageElement, "fontId" | "bold" | "italic" | "letterSpacing">>
+    Partial<
+      Pick<
+        PageElement,
+        | "fontId"
+        | "bold"
+        | "italic"
+        | "letterSpacing"
+        | "widthScale"
+        | "wordSpacing"
+        | "slant"
+      >
+    >
 ): { visible: string; overflow: string } {
   const layout = estimateTextLayout(
     element.text,
@@ -149,19 +159,12 @@ export function splitTextForHeight(
   );
   if (typeof document !== "undefined") {
     const context = document.createElement("canvas").getContext("2d");
-    if (context) {
-      context.font = fontStyle(
-        element,
-        getFontFamily(element.fontId || "caveat")
-      );
-      context.letterSpacing = `${element.letterSpacing || 0}px`;
+    if (context)
       layout.lines = textLines(
-        context,
         element.text,
         element.width,
-        element.paragraphSpacing
+        textMeasurer(context, element)
       );
-    }
   }
   let usedHeight = 0;
   let maxLines = 0;
@@ -499,11 +502,62 @@ function drawPaperTemplate(
   ctx.restore();
 }
 
-function textLines(
+/** Writing settings of a text block that used to belong to the font. */
+function writingSettings(
+  element: Partial<Pick<PageElement, "widthScale" | "wordSpacing" | "slant">>
+) {
+  const widthScale = Math.min(
+    3,
+    Math.max(0.3, (element.widthScale ?? 100) / 100)
+  );
+  return {
+    widthScale,
+    wordSpacing: Number.isFinite(element.wordSpacing)
+      ? (element.wordSpacing ?? 0)
+      : 0,
+    slant: Math.tan(
+      (Math.max(-45, Math.min(45, element.slant ?? 0)) * Math.PI) / 180
+    ),
+  };
+}
+
+/** Width of a run of text as the renderer will place it, letter by letter. */
+function textMeasurer(
   ctx: CanvasRenderingContext2D,
+  element: Pick<PageElement, "fontSize"> &
+    Partial<
+      Pick<
+        PageElement,
+        | "fontId"
+        | "bold"
+        | "italic"
+        | "letterSpacing"
+        | "widthScale"
+        | "wordSpacing"
+        | "slant"
+      >
+    >
+) {
+  const { widthScale, wordSpacing } = writingSettings(element);
+  ctx.font = fontStyle(element, getFontFamily(element.fontId || "caveat"));
+  ctx.letterSpacing = `${element.letterSpacing || 0}px`;
+  const cache = new Map<string, number>();
+  const advance = (character: string) => {
+    let width = cache.get(character);
+    if (width === undefined) {
+      width = ctx.measureText(character).width;
+      cache.set(character, width);
+    }
+    return width * widthScale + (/\s/.test(character) ? wordSpacing : 0);
+  };
+  return (text: string) =>
+    Array.from(text).reduce((sum, character) => sum + advance(character), 0);
+}
+
+function textLines(
   text: string,
   width: number,
-  paragraphSpacing: number
+  measure: (text: string) => number
 ): TextLine[] {
   const output: TextLine[] = [];
   for (const paragraph of text.replace(/\r/g, "").split("\n")) {
@@ -515,7 +569,7 @@ function textLines(
     let committed = "";
     for (const word of words) {
       const candidate = committed ? `${committed} ${word}` : word;
-      if (ctx.measureText(candidate).width <= width) {
+      if (measure(candidate) <= width) {
         committed = candidate;
         continue;
       }
@@ -525,7 +579,7 @@ function textLines(
       }
       let fragment = "";
       for (const letter of word) {
-        if (ctx.measureText(`${fragment}${letter}`).width > width && fragment) {
+        if (measure(`${fragment}${letter}`) > width && fragment) {
           output.push({ text: fragment, paragraphEnd: false });
           fragment = letter;
         } else {
@@ -536,100 +590,115 @@ function textLines(
     }
     output.push({ text: committed.trimEnd(), paragraphEnd: true });
   }
-  // keep the parameter in the signature to document parity with the pure layout helper
-  void paragraphSpacing;
   return output;
 }
 
-/**
- * Draws one line letter by letter so every character can use its own drawn variant.
- * Widths come from the variant actually used; like fillText's maxWidth, a line that
- * ends up wider than the block is compressed horizontally instead of overflowing.
- */
-function drawVariantLine(
-  ctx: CanvasRenderingContext2D,
-  element: PageElement,
-  project: FontProject,
-  text: string,
-  width: number,
-  y: number,
-  occurrences: Map<string, number>
-): void {
-  const glyphs = Array.from(text).map(character => {
-    const seen = occurrences.get(character) ?? 0;
-    if (!/\s/.test(character)) occurrences.set(character, seen + 1);
-    const variant = variantForOccurrence(project, character, seen);
-    ctx.font = fontStyle(element, getFontFamily(project.id, variant));
-    return {
-      character,
-      font: ctx.font,
-      advance: ctx.measureText(character).width,
-    };
-  });
-  const total = glyphs.reduce((sum, glyph) => sum + glyph.advance, 0);
-  const squeeze = total > width && total > 0 ? width / total : 1;
-  const used = total * squeeze;
-  let x =
-    element.align === "center"
-      ? (width - used) / 2
-      : element.align === "right"
-        ? width - used
-        : 0;
-  ctx.textAlign = "left";
-  for (const glyph of glyphs) {
-    ctx.font = glyph.font;
-    ctx.save();
-    ctx.translate(x, y);
-    if (squeeze !== 1) ctx.scale(squeeze, 1);
-    ctx.fillText(glyph.character, 0, 0);
-    ctx.restore();
-    x += glyph.advance * squeeze;
-  }
+interface LaidGlyph {
+  character: string;
+  variant: number;
+  font: string;
+  /** Horizontal space the glyph takes before compression, in page pixels. */
+  advance: number;
 }
 
-function drawTextElement(
+interface LaidLine {
+  /** Top of the line inside the text block. */
+  top: number;
+  /** Left edge of the first glyph after alignment. */
+  start: number;
+  /** Horizontal compression when a line is wider than the block, like fillText's maxWidth. */
+  squeeze: number;
+  glyphs: LaidGlyph[];
+}
+
+/**
+ * Places every character of a text block. Preview, export and the editable ink
+ * export all use this, so letters land in exactly the same spot everywhere.
+ * Repeated letters cycle through the drawn variants of a handwriting font.
+ */
+function layoutText(
   ctx: CanvasRenderingContext2D,
   element: PageElement,
-  family: string,
   project?: FontProject
-): void {
-  const alternates = Boolean(project && variantFontCount(project) > 1);
-  const occurrences = new Map<string, number>();
+): { lines: LaidLine[]; baseline: number } {
+  const { widthScale, wordSpacing } = writingSettings(element);
   const width = Math.max(1, element.width);
   const lineHeight = Math.max(
     1,
     element.fontSize * Math.max(0.7, element.lineHeight)
   );
+  const baseFamily = getFontFamily(element.fontId || "caveat");
+  const measure = textMeasurer(ctx, element);
+  const occurrences = new Map<string, number>();
+  const lines: LaidLine[] = [];
+  let top = 0;
+  for (const line of textLines(element.text, width, measure)) {
+    if (top + lineHeight > element.height + 0.5) break;
+    const glyphs = Array.from(line.text).map(character => {
+      const space = /\s/.test(character);
+      const seen = occurrences.get(character) ?? 0;
+      if (!space) occurrences.set(character, seen + 1);
+      const variant = project
+        ? variantForOccurrence(project, character, seen)
+        : 0;
+      ctx.font = fontStyle(
+        element,
+        project ? getFontFamily(project.id, variant) : baseFamily
+      );
+      return {
+        character,
+        variant,
+        font: ctx.font,
+        advance:
+          ctx.measureText(character).width * widthScale +
+          (space ? wordSpacing : 0),
+      };
+    });
+    const total = glyphs.reduce((sum, glyph) => sum + glyph.advance, 0);
+    const squeeze = total > width && total > 0 ? width / total : 1;
+    const used = total * squeeze;
+    const start =
+      element.align === "center"
+        ? (width - used) / 2
+        : element.align === "right"
+          ? width - used
+          : 0;
+    lines.push({ top, start, squeeze, glyphs });
+    top += lineHeight + (line.paragraphEnd ? element.paragraphSpacing : 0);
+  }
+  return {
+    lines,
+    baseline: baselineOffset(element.fontId || "caveat", element.fontSize),
+  };
+}
+
+function drawTextElement(
+  ctx: CanvasRenderingContext2D,
+  element: PageElement,
+  project?: FontProject
+): void {
+  const { widthScale, slant } = writingSettings(element);
   ctx.save();
   ctx.translate(element.x, element.y);
   ctx.rotate((element.rotation * Math.PI) / 180);
-  ctx.font = fontStyle(element, family);
   ctx.fillStyle = safeColor(element.color, "#354c43");
   ctx.textBaseline = "top";
-  ctx.textAlign = element.align;
-  ctx.letterSpacing = `${element.letterSpacing || 0}px`;
-  let y = 0;
-  const anchor =
-    element.align === "left"
-      ? 0
-      : element.align === "center"
-        ? width / 2
-        : width;
-  for (const line of textLines(
-    ctx,
-    element.text,
-    width,
-    element.paragraphSpacing
-  )) {
-    if (y + lineHeight > element.height + 0.5) break;
-    if (alternates && project) {
-      drawVariantLine(ctx, element, project, line.text, width, y, occurrences);
-      ctx.font = fontStyle(element, family);
-      ctx.textAlign = element.align;
-    } else {
-      ctx.fillText(line.text, anchor, y, width);
+  ctx.textAlign = "left";
+  const { lines, baseline } = layoutText(ctx, element, project);
+  for (const line of lines) {
+    let x = line.start;
+    for (const glyph of line.glyphs) {
+      if (!/\s/.test(glyph.character)) {
+        ctx.font = glyph.font;
+        ctx.save();
+        ctx.translate(x, line.top + baseline);
+        if (slant) ctx.transform(1, 0, -slant, 1, 0, 0);
+        ctx.scale(widthScale * line.squeeze, 1);
+        ctx.fillText(glyph.character, 0, -baseline);
+        ctx.restore();
+      }
+      x += glyph.advance * line.squeeze;
     }
-    y += lineHeight + (line.paragraphEnd ? element.paragraphSpacing : 0);
   }
   ctx.restore();
 }
@@ -766,7 +835,6 @@ async function drawElement(
     drawTextElement(
       ctx,
       element,
-      getFontFamily(element.fontId),
       fonts.find(font => font.id === element.fontId)
     );
     return;
@@ -939,13 +1007,8 @@ export function inkStrokesForElement(
   if (typeof document === "undefined") return [];
   const ctx = document.createElement("canvas").getContext("2d");
   if (!ctx) return [];
-  const baseFamily = getFontFamily(project.id);
-  const width = Math.max(1, element.width);
-  const lineHeight = Math.max(
-    1,
-    element.fontSize * Math.max(0.7, element.lineHeight)
-  );
-  const baseline = baselineOffset(project.id, element.fontSize);
+  const { widthScale, slant } = writingSettings(element);
+  const size = element.fontSize;
   const angle = (element.rotation * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
@@ -954,58 +1017,32 @@ export function inkStrokesForElement(
     y: element.y + x * sin + y * cos,
   });
   const color = safeColor(element.color, "#354c43");
-  ctx.textBaseline = "top";
-  ctx.letterSpacing = `${element.letterSpacing || 0}px`;
-  ctx.font = fontStyle(element, baseFamily);
-  const occurrences = new Map<string, number>();
+  const { lines, baseline } = layoutText(ctx, element, project);
   const result: PageInkStroke[] = [];
-  let top = 0;
-  for (const line of textLines(
-    ctx,
-    element.text,
-    width,
-    element.paragraphSpacing
-  )) {
-    if (top + lineHeight > element.height + 0.5) break;
-    const glyphs = Array.from(line.text).map(character => {
-      const seen = occurrences.get(character) ?? 0;
-      if (!/\s/.test(character)) occurrences.set(character, seen + 1);
-      const variant = variantForOccurrence(project, character, seen);
-      ctx.font = fontStyle(element, getFontFamily(project.id, variant));
-      return { character, variant, advance: ctx.measureText(character).width };
-    });
-    const total = glyphs.reduce((sum, glyph) => sum + glyph.advance, 0);
-    const squeeze = total > width && total > 0 ? width / total : 1;
-    const used = total * squeeze;
-    let x =
-      element.align === "center"
-        ? (width - used) / 2
-        : element.align === "right"
-          ? width - used
-          : 0;
-    const baseY = top + baseline;
-    for (const glyph of glyphs) {
-      if (!/\s/.test(glyph.character)) {
+  for (const line of lines) {
+    let x = line.start;
+    const baseY = line.top + baseline;
+    for (const glyph of line.glyphs) {
+      if (!/\s/.test(glyph.character))
         for (const stroke of glyphInkStrokes(
           project,
           glyph.character,
           glyph.variant
-        )) {
+        ))
           result.push({
             color,
-            width: Math.max(0.3, stroke.width * element.fontSize),
+            width: Math.max(0.3, stroke.width * size),
             points: stroke.points.map(point =>
               toPage(
-                x + point.x * element.fontSize * squeeze,
-                baseY - point.y * element.fontSize
+                x +
+                  point.x * size * widthScale * line.squeeze +
+                  slant * point.y * size,
+                baseY - point.y * size
               )
             ),
           });
-        }
-      }
-      x += glyph.advance * squeeze;
+      x += glyph.advance * line.squeeze;
     }
-    top += lineHeight + (line.paragraphEnd ? element.paragraphSpacing : 0);
   }
   return result;
 }

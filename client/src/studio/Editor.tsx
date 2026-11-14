@@ -4,7 +4,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
@@ -16,32 +15,22 @@ import {
   AlignRight,
   ArrowDown,
   ArrowLeft,
-  ArrowRight,
   ArrowUp,
   Bold,
   ChevronDown,
   ChevronUp,
-  ClipboardCheck,
   Copy,
   FileImage,
   FilePlus2,
-  Heading1,
-  Heading2,
-  ImagePlus,
   Italic,
-  List,
   Lock,
   LockOpen,
   Maximize2,
-  Minus,
   Move,
   PanelRight,
   Plus,
   Redo2,
   RotateCw,
-  Rows3,
-  Square,
-  TextCursorInput,
   Trash2,
   Type,
   Undo2,
@@ -60,7 +49,6 @@ import {
 import { useStudio } from "./store";
 import {
   createPage,
-  createText,
   paperDimensions,
   uid,
   type PageElement,
@@ -102,61 +90,6 @@ function numeric(
     : fallback;
 }
 
-function standardElement(
-  type: PageElement["type"],
-  settings: ReturnType<typeof useStudio>["settings"],
-  x = 86,
-  y = 96
-): PageElement {
-  const base: PageElement = {
-    id: uid(),
-    type,
-    x,
-    y,
-    width: 230,
-    height: 96,
-    rotation: 0,
-    text: "",
-    fontId: settings.defaultFontId,
-    fontSize: settings.defaultFontSize,
-    color: settings.defaultColor,
-    bold: false,
-    italic: false,
-    align: "left",
-    lineHeight: settings.defaultLineHeight,
-    letterSpacing: 0,
-    paragraphSpacing: 0,
-  };
-  switch (type) {
-    case "line":
-      return { ...base, width: 230, height: 12 };
-    case "arrow":
-      return { ...base, width: 230, height: 36 };
-    case "checkbox":
-      return { ...base, width: 28, height: 28, checked: false };
-    case "highlight":
-      return { ...base, width: 240, height: 32, color: "#e8bd4b" };
-    case "image":
-      return { ...base, width: 240, height: 180 };
-    default:
-      return base;
-  }
-}
-
-function textForTool(
-  tool: "text" | "heading" | "subheading" | "list" | "checklist" | "date"
-): string {
-  if (tool === "heading") return editorDefaults.heading;
-  if (tool === "subheading") return editorDefaults.subheading;
-  if (tool === "list") return editorDefaults.list;
-  if (tool === "checklist") return editorDefaults.checklist;
-  if (tool === "date")
-    return new Intl.DateTimeFormat("de-DE", { dateStyle: "long" }).format(
-      new Date()
-    );
-  return editorDefaults.text;
-}
-
 function isTextInput(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
@@ -193,7 +126,6 @@ export default function Editor({ documentId }: { documentId: string }) {
     };
   }, [data.fonts]);
   const stageRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const documentRef = useRef(document);
   const gestureRef = useRef<Gesture | null>(null);
 
@@ -342,79 +274,6 @@ export default function Editor({ documentId }: { documentId: string }) {
       ];
     });
     setCurrentPageIndex(index + direction);
-  };
-
-  const addText = (
-    tool: "text" | "heading" | "subheading" | "list" | "checklist" | "date"
-  ) => {
-    if (!currentPage) return;
-    const element = createText(
-      settings,
-      80,
-      90 + currentPage.elements.length * 18
-    );
-    element.text = textForTool(tool);
-    if (tool === "heading") {
-      element.fontSize = Math.max(32, settings.defaultFontSize * 1.65);
-      element.bold = true;
-      element.height = 80;
-    }
-    if (tool === "subheading") {
-      element.fontSize = Math.max(23, settings.defaultFontSize * 1.18);
-      element.height = 70;
-    }
-    if (tool === "list" || tool === "checklist") element.height = 150;
-    if (tool === "date") {
-      element.fontSize = Math.max(18, settings.defaultFontSize * 0.85);
-      element.height = 45;
-    }
-    mutateDocument(draft =>
-      draft.pages[currentPageIndex]?.elements.push(element)
-    );
-    setSelectedElementId(element.id);
-  };
-
-  const addGraphic = (type: Exclude<PageElement["type"], "text" | "image">) => {
-    if (!currentPage) return;
-    const element = standardElement(
-      type,
-      settings,
-      90,
-      110 + currentPage.elements.length * 14
-    );
-    mutateDocument(draft =>
-      draft.pages[currentPageIndex]?.elements.push(element)
-    );
-    setSelectedElementId(element.id);
-  };
-
-  const selectImage = () => fileInputRef.current?.click();
-
-  const importImage = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = "";
-    if (!file) return;
-    if (
-      !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
-      file.size > 5 * 1024 * 1024
-    ) {
-      toast.error(t.imageError);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => toast.error(t.imageReadError);
-    reader.onload = () => {
-      if (typeof reader.result !== "string" || !currentPage) return;
-      const element = {
-        ...standardElement("image", settings, 92, 112),
-        src: reader.result,
-      };
-      mutateDocument(draft =>
-        draft.pages[currentPageIndex]?.elements.push(element)
-      );
-      setSelectedElementId(element.id);
-    };
-    reader.readAsDataURL(file);
   };
 
   const duplicateElement = () => {
@@ -695,6 +554,13 @@ export default function Editor({ documentId }: { documentId: string }) {
             {t.redo}
           </button>
           <button
+            className={`btn secondary small preview-toggle ${showAllPages ? "active" : ""}`}
+            onClick={() => setShowAllPages(value => !value)}
+          >
+            <PanelRight size={16} />
+            {showAllPages ? t.editPage : t.overview}
+          </button>
+          <button
             className="btn primary small"
             onClick={() => setExportOpen(true)}
           >
@@ -703,133 +569,6 @@ export default function Editor({ documentId }: { documentId: string }) {
           </button>
         </div>
       </header>
-
-      <div className="editor-toolbar" role="toolbar" aria-label={t.toolbar}>
-        <div className="tool-group">
-          <span>{t.text}</span>
-          <button
-            className="icon-btn"
-            onClick={() => addText("text")}
-            title={t.text}
-            aria-label={t.text}
-          >
-            <TextCursorInput size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addText("heading")}
-            title={t.heading}
-            aria-label={t.heading}
-          >
-            <Heading1 size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addText("subheading")}
-            title={t.subheading}
-            aria-label={t.subheading}
-          >
-            <Heading2 size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addText("list")}
-            title={t.list}
-            aria-label={t.list}
-          >
-            <List size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addText("checklist")}
-            title={t.checklist}
-            aria-label={t.checklist}
-          >
-            <ClipboardCheck size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addText("date")}
-            title={t.date}
-            aria-label={t.date}
-          >
-            <Rows3 size={17} />
-          </button>
-        </div>
-        <div className="tool-group">
-          <span>{t.addElement}</span>
-          <button
-            className="icon-btn"
-            onClick={selectImage}
-            title={t.image}
-            aria-label={t.image}
-          >
-            <ImagePlus size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("rectangle")}
-            title={t.rectangle}
-            aria-label={t.rectangle}
-          >
-            <Square size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("ellipse")}
-            title={t.ellipse}
-            aria-label={t.ellipse}
-          >
-            <span className="ellipse-icon" />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("line")}
-            title={t.line}
-            aria-label={t.line}
-          >
-            <Minus size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("arrow")}
-            title={t.arrow}
-            aria-label={t.arrow}
-          >
-            <ArrowRight size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("checkbox")}
-            title={t.checkbox}
-            aria-label={t.checkbox}
-          >
-            <ClipboardCheck size={17} />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={() => addGraphic("highlight")}
-            title={t.highlight}
-            aria-label={t.highlight}
-          >
-            <span className="highlight-icon" />
-          </button>
-          <input
-            ref={fileInputRef}
-            className="sr-only"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={importImage}
-          />
-        </div>
-        <button
-          className={`btn secondary small preview-toggle ${showAllPages ? "active" : ""}`}
-          onClick={() => setShowAllPages(value => !value)}
-        >
-          <PanelRight size={16} />
-          {showAllPages ? t.editPage : t.overview}
-        </button>
-      </div>
 
       <div className="editor-layout">
         <aside className="editor-pages" aria-label={t.pages}>
@@ -1148,12 +887,6 @@ export default function Editor({ documentId }: { documentId: string }) {
                     )}
                   </>
                 )}
-                {selectedElement.type === "image" && (
-                  <button className="btn secondary small" onClick={selectImage}>
-                    <ImagePlus size={16} />
-                    {t.image}
-                  </button>
-                )}
                 {selectedElement.type === "checkbox" && (
                   <label className="editor-check">
                     <input
@@ -1280,13 +1013,52 @@ export default function Editor({ documentId }: { documentId: string }) {
                         <span>{t.letterSpacing}</span>
                         <NumberField
                           value={selectedElement.letterSpacing}
-                          min={-4}
-                          max={20}
+                          min={-10}
+                          max={50}
                           decimals={1}
                           onChange={value =>
                             updateElement(selectedElement.id, {
                               letterSpacing: value,
                             })
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        <span>{t.wordSpacing}</span>
+                        <NumberField
+                          value={selectedElement.wordSpacing ?? 0}
+                          min={-50}
+                          max={200}
+                          decimals={1}
+                          onChange={value =>
+                            updateElement(selectedElement.id, {
+                              wordSpacing: value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        <span>{t.widthScale}</span>
+                        <NumberField
+                          value={selectedElement.widthScale ?? 100}
+                          min={30}
+                          max={300}
+                          onChange={value =>
+                            updateElement(selectedElement.id, {
+                              widthScale: value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="field">
+                        <span>{t.slant}</span>
+                        <NumberField
+                          value={selectedElement.slant ?? 0}
+                          min={-45}
+                          max={45}
+                          decimals={1}
+                          onChange={value =>
+                            updateElement(selectedElement.id, { slant: value })
                           }
                         />
                       </label>

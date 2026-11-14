@@ -107,10 +107,41 @@ describe("font-engine", () => {
     expect(font.charToGlyph(" ").advanceWidth).toBe(280);
   });
 
-  it("honors zero word spacing from the persisted settings range", () => {
-    const project = baseProject({});
-    project.settings.wordSpacing = 0;
-    expect(buildFont(project).charToGlyph(" ").advanceWidth).toBe(0);
+  it("ignores stored font settings; spacing is set per text block in documents", () => {
+    const plain = baseProject({});
+    const tweaked = baseProject({});
+    tweaked.settings = {
+      ...tweaked.settings,
+      wordSpacing: 0,
+      spacing: 200,
+      slant: 30,
+    };
+    expect(buildFont(tweaked).charToGlyph(" ").advanceWidth).toBe(
+      buildFont(plain).charToGlyph(" ").advanceWidth
+    );
+  });
+
+  it("crops each glyph to its ink, wherever it was drawn on the canvas", () => {
+    const bar = (x: number) => [
+      {
+        width: 8,
+        points: [
+          { x, y: 300 },
+          { x, y: 60 },
+        ],
+      },
+    ];
+    const left = buildFont(
+      baseProject({ l: { variants: [bar(60)] } })
+    ).charToGlyph("l");
+    const right = buildFont(
+      baseProject({ l: { variants: [bar(320)] } })
+    ).charToGlyph("l");
+    expect(left.advanceWidth).toBe(right.advanceWidth);
+    // A thin bar is narrow: far less than the old 0.625 em minimum.
+    expect(left.advanceWidth).toBeLessThan(200);
+    const box = left.getBoundingBox();
+    expect(Math.round(box.x1)).toBe(40);
   });
 
   it("handles empty projects and empty glyph variants without pretending they are drawable glyphs", () => {
