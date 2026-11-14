@@ -119,6 +119,13 @@ export const editorText = {
   goodNotesShared: "PDF geteilt. In GoodNotes landet es als neues Notizbuch.",
   goodNotesDownloaded:
     "PDF gespeichert. In GoodNotes: Neu → Importieren und die Datei auswählen.",
+  editableInk: "Handschrift als bearbeitbare Striche (für GoodNotes)",
+  editableInkHint:
+    "Text in deinen eigenen Schriften wird als echte Stiftstriche gespeichert. In GoodNotes lassen sie sich auswählen, umfärben und mit dem Radierer löschen.",
+  editableInfo:
+    "Das Papier bleibt Hintergrund, deine Handschrift liegt als PDF-Tintenanmerkungen darüber. GoodNotes übernimmt sie beim Import als eigene Striche.",
+  editableFlatHint:
+    "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung und sind deshalb nicht radierbar, sondern Teil des Hintergrunds.",
   exportProHint: "300 dpi sowie PNG und JPEG gibt es mit Pro.",
   untitledFile: "scriptly-dokument",
   zoom: "Vorschau",

@@ -7,6 +7,8 @@ import type {
 import { paperDimensions } from "./types";
 import {
   getFontFamily,
+  glyphInkStrokes,
+  inkedVariants,
   loadFontVariants,
   variantFontCount,
   variantForOccurrence,
@@ -803,7 +805,9 @@ export async function renderPage(
   page: StudioPage,
   fonts: FontProject[] = [],
   scale = 1,
-  pageNumber = 1
+  pageNumber = 1,
+  /** Elements exported separately, for example as editable ink. */
+  skipElementIds: ReadonlySet<string> = new Set()
 ): Promise<HTMLCanvasElement> {
   if (typeof document === "undefined")
     throw new Error("Seitenrendering ist nur im Browser verfügbar.");
@@ -842,7 +846,8 @@ export async function renderPage(
     drawPaperTemplate(context, page.paper, base.width, base.height, pageNumber);
   }
   for (const element of page.elements)
-    await drawElement(context, element, fonts);
+    if (!skipElementIds.has(element.id))
+      await drawElement(context, element, fonts);
   return canvas;
 }
 
@@ -900,4 +905,107 @@ export function textBoxOnPaper(
     lineHeight: spacing / Math.max(1, fontSize),
     lines,
   };
+}
+
+/** A stroke placed on the page, in page pixels (96 per inch, origin top left). */
+export interface PageInkStroke {
+  points: Array<{ x: number; y: number }>;
+  width: number;
+  color: string;
+}
+
+/** True when every visible character of a text element was drawn in its font. */
+export function canExportAsInk(
+  element: PageElement,
+  project: FontProject | undefined
+): project is FontProject {
+  if (element.type !== "text" || !project || !element.text.trim()) return false;
+  return Array.from(element.text).every(
+    character =>
+      /\s/.test(character) ||
+      inkedVariants(project.glyphs?.[character]).length > 0
+  );
+}
+
+/**
+ * Lays a text element out exactly like the renderer (same line breaks, variant
+ * cycling, alignment, compression and rotation) and returns the pen strokes of
+ * every character instead of pixels.
+ */
+export function inkStrokesForElement(
+  element: PageElement,
+  project: FontProject
+): PageInkStroke[] {
+  if (typeof document === "undefined") return [];
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return [];
+  const baseFamily = getFontFamily(project.id);
+  const width = Math.max(1, element.width);
+  const lineHeight = Math.max(
+    1,
+    element.fontSize * Math.max(0.7, element.lineHeight)
+  );
+  const baseline = baselineOffset(project.id, element.fontSize);
+  const angle = (element.rotation * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const toPage = (x: number, y: number) => ({
+    x: element.x + x * cos - y * sin,
+    y: element.y + x * sin + y * cos,
+  });
+  const color = safeColor(element.color, "#354c43");
+  ctx.textBaseline = "top";
+  ctx.letterSpacing = `${element.letterSpacing || 0}px`;
+  ctx.font = fontStyle(element, baseFamily);
+  const occurrences = new Map<string, number>();
+  const result: PageInkStroke[] = [];
+  let top = 0;
+  for (const line of textLines(
+    ctx,
+    element.text,
+    width,
+    element.paragraphSpacing
+  )) {
+    if (top + lineHeight > element.height + 0.5) break;
+    const glyphs = Array.from(line.text).map(character => {
+      const seen = occurrences.get(character) ?? 0;
+      if (!/\s/.test(character)) occurrences.set(character, seen + 1);
+      const variant = variantForOccurrence(project, character, seen);
+      ctx.font = fontStyle(element, getFontFamily(project.id, variant));
+      return { character, variant, advance: ctx.measureText(character).width };
+    });
+    const total = glyphs.reduce((sum, glyph) => sum + glyph.advance, 0);
+    const squeeze = total > width && total > 0 ? width / total : 1;
+    const used = total * squeeze;
+    let x =
+      element.align === "center"
+        ? (width - used) / 2
+        : element.align === "right"
+          ? width - used
+          : 0;
+    const baseY = top + baseline;
+    for (const glyph of glyphs) {
+      if (!/\s/.test(glyph.character)) {
+        for (const stroke of glyphInkStrokes(
+          project,
+          glyph.character,
+          glyph.variant
+        )) {
+          result.push({
+            color,
+            width: Math.max(0.3, stroke.width * element.fontSize),
+            points: stroke.points.map(point =>
+              toPage(
+                x + point.x * element.fontSize * squeeze,
+                baseY - point.y * element.fontSize
+              )
+            ),
+          });
+        }
+      }
+      x += glyph.advance * squeeze;
+    }
+    top += lineHeight + (line.paragraphEnd ? element.paragraphSpacing : 0);
+  }
+  return result;
 }
