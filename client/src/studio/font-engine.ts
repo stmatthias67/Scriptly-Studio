@@ -459,3 +459,43 @@ export async function loadFontVariants(projects: FontProject[]): Promise<void> {
     )
   );
 }
+
+/** One pen stroke of a glyph in em units: x to the right, y up from the baseline. */
+export interface GlyphInkStroke {
+  points: Array<{ x: number; y: number }>;
+  /** Pen width in em, averaged over the stroke's pressure. */
+  width: number;
+}
+
+/**
+ * The drawn strokes of one character as centre lines, with exactly the same
+ * scale, baseline, slant, width and smoothing the generated font uses. Used for
+ * exports that keep handwriting as real, erasable strokes instead of pixels.
+ */
+export function glyphInkStrokes(
+  project: FontProject,
+  character: string,
+  variantIndex = 0
+): GlyphInkStroke[] {
+  const settings = normalizedSettings(project.settings);
+  const scale = sourceScale(settings);
+  const strokes = selectedStrokes(project.glyphs?.[character], variantIndex);
+  const result: GlyphInkStroke[] = [];
+  for (const stroke of strokes) {
+    const source = (stroke.points ?? []).filter(validPoint);
+    if (!source.length) continue;
+    const smoothed = smoothPoints(source, settings.smoothness);
+    const base = Math.max(0.5, number(stroke.width, 3));
+    const widths = smoothed.map(point => pressureWidth(base, point.pressure));
+    const average =
+      widths.reduce((sum, width) => sum + width, 0) / widths.length;
+    result.push({
+      points: smoothed.map(point => {
+        const outline = transformPoint(point, settings);
+        return { x: outline.x / UNITS_PER_EM, y: outline.y / UNITS_PER_EM };
+      }),
+      width: (average * scale) / UNITS_PER_EM,
+    });
+  }
+  return result;
+}

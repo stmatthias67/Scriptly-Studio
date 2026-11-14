@@ -12,6 +12,7 @@ import { Modal } from "./components";
 import { MAX_RENDER_PIXELS, pagePixelDimensions, renderPage } from "./render";
 import type { FontProject, StudioDocument } from "./types";
 import { useStudio } from "./store";
+import { buildEditablePdf } from "./goodnotes-export";
 import { paperDimensions } from "./types";
 import { editorText as t } from "./locales/editor";
 
@@ -146,16 +147,76 @@ async function buildPdf(
   return pdf;
 }
 
+export interface PdfOutput {
+  blob: Blob;
+  /** Text blocks exported as editable ink (only for editable exports). */
+  inkBlocks: number;
+  /** Text blocks that stayed flat because their font has no drawn strokes. */
+  flatBlocks: number;
+}
+
+/**
+ * Builds the PDF. With `editable`, handwriting from your own fonts becomes ink
+ * annotations that GoodNotes imports as its own erasable pen strokes; otherwise
+ * every page is a single image, exactly as on screen.
+ */
+export async function createPdf(
+  document: StudioDocument,
+  fonts: FontProject[],
+  indexes: number[],
+  dpi: number,
+  editable: boolean,
+  onProgress?: (current: number, total: number) => void
+): Promise<PdfOutput> {
+  if (editable) {
+    ensureRenderable(document, indexes, dpi);
+    const result = await buildEditablePdf(
+      document,
+      fonts,
+      indexes,
+      dpi,
+      onProgress
+    );
+    return {
+      blob: new Blob([result.bytes as Uint8Array<ArrayBuffer>], {
+        type: "application/pdf",
+      }),
+      inkBlocks: result.inkBlocks,
+      flatBlocks: result.flatBlocks,
+    };
+  }
+  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
+  return { blob: pdf.output("blob"), inkBlocks: 0, flatBlocks: 0 };
+}
+
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
 export async function exportPdf(
   document: StudioDocument,
   fonts: FontProject[] = [],
   indexes: number[],
   filename: string,
   dpi = 150,
-  onProgress?: (current: number, total: number) => void
-): Promise<void> {
-  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
-  pdf.save(`${sanitizeFilename(filename)}.pdf`);
+  onProgress?: (current: number, total: number) => void,
+  editable = false
+): Promise<PdfOutput> {
+  const output = await createPdf(
+    document,
+    fonts,
+    indexes,
+    dpi,
+    editable,
+    onProgress
+  );
+  downloadBlob(output.blob, `${sanitizeFilename(filename)}.pdf`);
+  return output;
 }
 
 /**
@@ -169,13 +230,22 @@ export async function sendPdfToGoodNotes(
   indexes: number[],
   filename: string,
   dpi = 150,
-  onProgress?: (current: number, total: number) => void
-): Promise<"shared" | "downloaded" | "cancelled"> {
-  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
+  onProgress?: (current: number, total: number) => void,
+  editable = true
+): Promise<{
+  result: "shared" | "downloaded" | "cancelled";
+  output: PdfOutput;
+}> {
+  const output = await createPdf(
+    document,
+    fonts,
+    indexes,
+    dpi,
+    editable,
+    onProgress
+  );
   const name = `${sanitizeFilename(filename)}.pdf`;
-  const file = new File([pdf.output("blob")], name, {
-    type: "application/pdf",
-  });
+  const file = new File([output.blob], name, { type: "application/pdf" });
   if (
     typeof navigator !== "undefined" &&
     typeof navigator.share === "function" &&
@@ -183,14 +253,14 @@ export async function sendPdfToGoodNotes(
   ) {
     try {
       await navigator.share({ files: [file], title: document.title || name });
-      return "shared";
+      return { result: "shared", output };
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError")
-        return "cancelled";
+        return { result: "cancelled", output };
     }
   }
-  pdf.save(name);
-  return "downloaded";
+  downloadBlob(output.blob, name);
+  return { result: "downloaded", output };
 }
 
 async function exportImages(
@@ -234,6 +304,7 @@ export default function ExportDialog({
   const [scope, setScope] = useState<ExportScope>("all");
   const [range, setRange] = useState("");
   const [dpi, setDpi] = useState(150);
+  const [editable, setEditable] = useState(true);
   const [filename, setFilename] = useState(document.title || t.untitledFile);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{
@@ -276,6 +347,14 @@ export default function ExportDialog({
     ),
   ].join(" / ");
 
+  const reportFlat = (output: PdfOutput) => {
+    if (editable && output.flatBlocks > 0)
+      toast.message(
+        t.editableFlatHint.replace("{count}", String(output.flatBlocks)),
+        { duration: 9000 }
+      );
+  };
+
   const shareToGoodNotes = async () => {
     if (!filename.trim()) {
       setError(t.filenameRequired);
@@ -288,14 +367,16 @@ export default function ExportDialog({
     setBusy(true);
     setError("");
     try {
-      const result = await sendPdfToGoodNotes(
+      const { result, output } = await sendPdfToGoodNotes(
         document,
         fonts,
         indexes,
         sanitizeFilename(filename),
         dpi,
-        (current, total) => setProgress({ current, total })
+        (current, total) => setProgress({ current, total }),
+        editable
       );
+      reportFlat(output);
       if (result === "shared") toast.success(t.goodNotesShared);
       if (result === "downloaded")
         toast.message(t.goodNotesDownloaded, { duration: 9000 });
@@ -333,13 +414,16 @@ export default function ExportDialog({
       const updateProgress = (current: number, total: number) =>
         setProgress({ current, total });
       if (format === "pdf")
-        await exportPdf(
-          document,
-          fonts,
-          indexes,
-          safeFilename,
-          dpi,
-          updateProgress
+        reportFlat(
+          await exportPdf(
+            document,
+            fonts,
+            indexes,
+            safeFilename,
+            dpi,
+            updateProgress,
+            editable
+          )
         );
       else
         await exportImages(
@@ -467,11 +551,25 @@ export default function ExportDialog({
         <p className="muted export-paper-size">
           {t.paperSize}: {sizeSummary}
         </p>
+        {format === "pdf" && (
+          <label className="export-editable">
+            <input
+              type="checkbox"
+              checked={editable}
+              disabled={busy}
+              onChange={event => setEditable(event.target.checked)}
+            />
+            <span>
+              <strong>{t.editableInk}</strong>
+              <small>{t.editableInkHint}</small>
+            </span>
+          </label>
+        )}
         <p className="export-info">
           {format === "pdf" ? (
             <>
               <FileText size={16} />
-              {t.pdfInfo}
+              {editable ? t.editableInfo : t.pdfInfo}
             </>
           ) : (
             <>
