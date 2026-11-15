@@ -172,10 +172,7 @@
   align-items: start;
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(208px, 0.78fr) minmax(420px, 1.75fr) minmax(
-      215px,
-      0.86fr
-    );
+  grid-template-columns: minmax(208px, 0.7fr) minmax(420px, 2fr);
 }
 
 .font-studio .card,
@@ -947,4 +944,35 @@ html[data-theme="dark"] .character-cell.complete:not(.selected) {
   .font-gallery {
     grid-template-columns: 1fr;
   }
+}
+
+.font-guide-width line {
+  stroke: #c9a46b;
+  stroke-dasharray: 3 5;
+}
+.font-guide-width text {
+  fill: #b08a52;
+}
+.font-width-slider {
+  align-items: center;
+  color: var(--font-muted, var(--muted));
+  display: inline-flex;
+  font-size: 12px;
+  gap: 10px;
+}
+.font-width-slider > i {
+  background: #1f2f29;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+  max-height: 30px;
+  max-width: 30px;
+}
+.font-width-slider input[type="range"] {
+  accent-color: var(--accent);
+  width: 140px;
+}
+.font-width-slider input:not([type="range"]) {
+  padding: 6px 8px;
+  width: 64px;
 }

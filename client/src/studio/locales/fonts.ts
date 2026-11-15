@@ -59,6 +59,7 @@ export const fontTexts = {
   guideMean: "Mittellinie",
   guideBase: "Grundlinie",
   guideBottom: "Unterlinie",
+  guideWidth: "Breite",
   hintCapital:
     "Großbuchstaben und Ziffern stehen auf der Grundlinie und reichen bis zur Oberlinie. Die blasse Vorlage zeigt die Größe.",
   hintAscender:

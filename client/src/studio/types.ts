@@ -72,6 +72,12 @@ export interface PageElement {
   checked?: boolean;
   /** Fixed elements stay where they are and cannot be dragged or resized. */
   locked?: boolean;
+  /** Extra space added to every space character, in page pixels. */
+  wordSpacing?: number;
+  /** Horizontal letter width in percent (100 = as drawn). */
+  widthScale?: number;
+  /** Slant in degrees; positive leans to the right. */
+  slant?: number;
 }
 export interface StudioPage {
   id: string;

@@ -56,7 +56,10 @@ export const editorText = {
   center: "Zentriert",
   right: "Rechtsbündig",
   lineHeight: "Zeilenabstand",
-  letterSpacing: "Zeichenabstand",
+  letterSpacing: "Zeichenabstand (px)",
+  wordSpacing: "Wortabstand (px)",
+  widthScale: "Zeichenbreite (%)",
+  slant: "Neigung (°)",
   paragraphSpacing: "Absatzabstand",
   rotation: "Drehung",
   position: "Position",
@@ -110,22 +113,17 @@ export const editorText = {
     "Diese Auflösung ist für das Papierformat zu hoch. Wähle bitte eine kleinere Auflösung.",
   imageExportInfo:
     "Bei PNG und JPEG wird jede ausgewählte Seite als eigene Bilddatei heruntergeladen.",
-  pdfInfo:
-    "Die PDF enthält rasterisierte Seiten in Original-Millimetern und kann in GoodNotes importiert werden.",
   close: "Schließen",
   cancel: "Abbrechen",
   exportDone: "Export fertig.",
-  goodNotesSend: "An GoodNotes senden",
-  goodNotesShared: "PDF geteilt. In GoodNotes landet es als neues Notizbuch.",
+  goodNotesShared:
+    "GoodNotes-Datei geteilt. In GoodNotes öffnet sie sich als eigenes Notizbuch.",
   goodNotesDownloaded:
-    "PDF gespeichert. In GoodNotes: Neu → Importieren und die Datei auswählen.",
-  editableInk: "Handschrift als bearbeitbare Striche (für GoodNotes)",
-  editableInkHint:
-    "Text in deinen eigenen Schriften wird als echte Stiftstriche gespeichert. In GoodNotes lassen sie sich auswählen, umfärben und mit dem Radierer löschen.",
-  editableInfo:
-    "Das Papier bleibt Hintergrund, deine Handschrift liegt als PDF-Tintenanmerkungen darüber. GoodNotes übernimmt sie beim Import als eigene Striche.",
+    "GoodNotes-Datei gespeichert (.goodnotes). Öffne sie auf iPad oder Mac, GoodNotes legt daraus ein Notizbuch an.",
+  goodNotesInfo:
+    "Echte GoodNotes-Datei (.goodnotes): Deine Handschrift wird als GoodNotes-Tinte gespeichert und lässt sich radieren, mit dem Lasso auswählen und umfärben. Das Blatt ist das Papier der Seite. Pro Seite entsteht ein Notizbuch. Auf iPad und iPhone öffnet sich das Teilen-Menü: dort GoodNotes wählen.",
   editableFlatHint:
-    "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung und sind deshalb nicht radierbar, sondern Teil des Hintergrunds.",
+    "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung. Sie stehen im Papier der Seite und sind deshalb nicht radierbar.",
   exportProHint: "300 dpi sowie PNG und JPEG gibt es mit Pro.",
   untitledFile: "scriptly-dokument",
   zoom: "Vorschau",

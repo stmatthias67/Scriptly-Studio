@@ -28,7 +28,7 @@ export const plans: Record<PlanId, Plan> = {
       { label: "2 eigene Handschriften" },
       { label: "1 eigenes Blatt im Papier-Studio" },
       { label: "Die drei Standardblätter" },
-      { label: "PDF-Export für GoodNotes" },
+      { label: "Export als echte GoodNotes-Datei (.goodnotes)" },
     ],
   },
   pro: {

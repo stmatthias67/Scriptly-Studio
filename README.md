@@ -12,7 +12,7 @@ Die unveränderten Befehle `pnpm dev`, `pnpm build` und `pnpm start` beziehen si
 
 ## Dokumente automatisch auf Papier setzen
 
-Über „Neues Dokument“ öffnet sich zuerst der blattfreie Generator. Dort werden Dokumentname, kompletter Text, Handschrift, Schriftfarbe, Größe und Papier ausgewählt. „Generieren“ erstellt daraus ein oder mehrere Dokumentseiten und öffnet anschließend den bestehenden Editor. Bei linierten Blättern wird die Textzeilenhöhe aus dem echten Linienabstand berechnet; Textposition und Zeilenhöhe werden so gesetzt, dass jede Zeile auf der ausgewählten Linie sitzt. Der Export nutzt denselben Renderer und erzeugt eine PDF, die in GoodNotes importiert werden kann.
+Über „Neues Dokument“ öffnet sich zuerst der blattfreie Generator. Dort werden Dokumentname, kompletter Text, Handschrift, Schriftfarbe, Größe und Papier ausgewählt. „Generieren“ erstellt daraus ein oder mehrere Dokumentseiten und öffnet anschließend den bestehenden Editor. Bei linierten Blättern wird die Textzeilenhöhe aus dem echten Linienabstand berechnet; Textposition und Zeilenhöhe werden so gesetzt, dass jede Zeile auf der ausgewählten Linie sitzt. Der Export nutzt denselben Renderer; für GoodNotes entsteht eine native `.goodnotes`-Datei.
 
 ## Bedienung
 
@@ -22,9 +22,9 @@ Dokumente bestehen aus getrennten Seiten mit frei beweglichen und skalierbaren T
 
 Im Papier-Studio gibt es drei Standardblätter (liniert, punktiert, kariert) unter `client/public/papers/`. Ihre Textraster sind in `types.ts` (`builtInSheets`) eingemessen. Eigene Blätter werden als PNG, JPEG oder WebP hochgeladen; Linienabstand und erste Linie werden automatisch erkannt (`sheet-detect.ts`) und lassen sich an einem Vorschautext feinjustieren. Gespeichert werden nur hochgeladene Blätter, deren Raster eingestellt oder bestätigt wurde. Ältere Papiervorlagen werden beim Laden entfernt; bestehende Dokumentseiten behalten ihr Papier.
 
-Unter „Abo“ gibt es die Pläne Free, Pro und Lifetime mit einem reinen Test-Checkout (Google Play, Kreditkarte, PayPal simuliert, keine Zahlungsdaten). Free ist auf zwei Handschriften und ein eigenes Blatt begrenzt. Funktionen, die es noch nicht gibt, sind als „bald verfügbar“ markiert. „An GoodNotes senden“ im Export öffnet auf iPad/iPhone das Teilen-Menü mit der PDF; ohne Teilen-Funktion wird die PDF heruntergeladen.
+Unter „Abo“ gibt es die Pläne Free, Pro und Lifetime mit einem reinen Test-Checkout (Google Play, Kreditkarte, PayPal simuliert, keine Zahlungsdaten). Free ist auf zwei Handschriften und ein eigenes Blatt begrenzt. Funktionen, die es noch nicht gibt, sind als „bald verfügbar“ markiert.
 
-PDF, PNG und JPEG verwenden denselben Canvas-Renderer wie die Vorschau. PDFs bewahren die Original-Millimetermaße, auch bei verschiedenen Formaten innerhalb eines Dokuments. Die Inhalte sind rasterisiert, nicht als auswählbarer Vektortext gespeichert. 96, 150 und 300 dpi sind wählbar, innerhalb eines Sicherheitslimits von 16 Millionen Pixeln pro Seite. Bei Bildformaten wird jede gewählte Seite einzeln heruntergeladen; manche Browser fragen nach einer Erlaubnis für mehrere Downloads. Beschädigte Bilddaten führen zu einer verständlichen Exportfehlermeldung, nicht zu einem scheinbar vollständigen Download. PDF-Dateien können in GoodNotes importiert werden; es handelt sich nicht um proprietäre GoodNotes-Projektdateien. Ein direkter Import in einer GoodNotes-Installation war in dieser Umgebung nicht verfügbar.
+GoodNotes, PNG und JPEG verwenden denselben Canvas-Renderer wie die Vorschau. Einen PDF-Export gibt es nicht mehr; für GoodNotes entsteht ausschließlich eine `.goodnotes`-Datei. 96, 150 und 300 dpi sind wählbar, innerhalb eines Sicherheitslimits von 16 Millionen Pixeln pro Seite. Bei Bildformaten wird jede gewählte Seite einzeln heruntergeladen.
 
 ## Speicherung und Datenschutz
 
@@ -44,10 +44,16 @@ Die Wortmarke lässt sich in `studio/components.tsx` austauschen, Titel und Spra
 
 Nach `pnpm build:static` prüft `node tests/production-check.mjs` den gebauten Produktionsstand, den dynamischen PDF-Import, die freie Akzentfarbe und die Fehlerseite. Dafür wird ein kurzlebiger lokaler Prüfserver gestartet und anschließend wieder beendet.
 
-## GoodNotes-Export mit bearbeitbarer Handschrift
+## GoodNotes-Export (.goodnotes)
 
-Eine echte `.goodnotes`-Datei wird nicht erzeugt: Das Format ist proprietär und nicht dokumentiert. Stattdessen schreibt der Export eine PDF, in der Text aus eigenen Handschriften als PDF-Tintenanmerkungen (`/Subtype /Ink`, ISO 32000) liegt, also als echte Vektorstriche statt als Pixel. GoodNotes und die meisten Notiz-Apps übernehmen solche Anmerkungen beim Import als eigene Stiftstriche. Papier, Bilder, Formen und Text in eingebauten Schriften bleiben ein Hintergrundbild.
+Das Format „GoodNotes“ im Export erzeugt ausschließlich native GoodNotes-Notizbücher mit der Endung `.goodnotes`; dieser Weg erzeugt und übergibt nie eine PDF. Text aus eigenen Handschriften wird als echte GoodNotes-Tinte geschrieben und lässt sich in GoodNotes radieren, mit dem Lasso auswählen und umfärben. Das Blatt mit Bildern, Formen und Text in eingebauten Schriften ist das Papier der Seite. GoodNotes selbst speichert das Papier jeder Seite intern als PDF-Anlage im Notizbuch (auch ein leeres, in GoodNotes angelegtes Notizbuch enthält sie); nach außen wird nie eine PDF exportiert oder weitergegeben.
 
-Bedienung: Im Dokument „Exportieren“ wählen, Format PDF, Häkchen „Handschrift als bearbeitbare Striche (für GoodNotes)“ gesetzt lassen. „An GoodNotes senden“ öffnet auf iPad/iPhone das Teilen-Menü (dort GoodNotes wählen), „Export starten“ lädt die PDF herunter (in GoodNotes: Neu → Importieren). Ein Textblock wird nur dann als Striche exportiert, wenn jedes seiner Zeichen in der Schrift gezeichnet ist; sonst bleibt er Hintergrund, und der Export meldet das.
+Bedienung: Im Dokument „Exportieren“ wählen, Format „GoodNotes“ (Standard), „Export starten“. Auf iPad/iPhone öffnet sich das Teilen-Menü, dort GoodNotes wählen; sonst werden die `.goodnotes`-Dateien heruntergeladen und auf iPad oder Mac geöffnet. Pro Dokumentseite entsteht ein eigenes Notizbuch, weil die Notizbuch-Hülle genau eine Seite beschreibt. Seiten, die nicht A4 hochkant sind, werden auf A4 eingepasst.
 
-Aufbau: `font-engine.ts` (`glyphInkStrokes`) liefert die Mittellinien der Zeichen, `render.ts` (`inkStrokesForElement`) setzt sie mit derselben Zeilen-, Varianten- und Ausrichtungslogik wie die Vorschau auf die Seite, `goodnotes-export.ts` rendert den Hintergrund ohne diese Texte, und `ink-pdf.ts` schreibt die PDF samt Darstellungsstreams.
+Technik: GoodNotes veröffentlicht keine Spezifikation. Der Schreiber (`goodnotes-format.ts`) ist eine Portierung von [Inkly](https://github.com/Benspiel/Inkly) (MIT, © 2026 Ben/Benspiel): Ein echtes, leeres GoodNotes-Notizbuch (`goodnotes-shell.ts`) dient als Hülle, alle IDs werden neu vergeben, die Striche kommen als Protobuf-Datensätze mit LZ4-gerahmten Punktdaten nach `notes/<ID>`, und das Blatt ersetzt die Papier-Anlage. Weil das Format inoffiziell entschlüsselt ist, kann eine künftige GoodNotes-Version es ändern.
+
+## Schriften und Textblöcke
+
+Schriften haben keine eigenen Einstellungen mehr (Größe, Grundlinie, Abstände, Breite, Neigung, Glättung). Jede Schrift wird gleich gebaut: Jedes Zeichen wird eng auf seine Tinte zugeschnitten, mit 0,04 Geviert Rand je Seite. Wo auf der Zeichenfläche ein Buchstabe steht, spielt also keine Rolle. Größe, Zeichenabstand, Wortabstand, Zeichenbreite und Neigung stellt man pro Textblock im Dokument ein (Eigenschaften rechts). Beim Zeichnen zeigen eine blasse Vorlage sowie Ober-, Mittel-, Grund-, Unterlinie und zwei „Breite“-Linien, wie groß und breit ein Zeichen werden soll; die Stiftstärke ist frei zwischen 1 und 30 einstellbar.
+
+Die frühere Werkzeugleiste im Dokument-Editor (Text, Überschriften, Liste, Checkliste, Datum, Bild und Formen) ist entfernt. Was jeder Knopf getan hat, steht in `docs/dokument-werkzeugleiste.md`.
