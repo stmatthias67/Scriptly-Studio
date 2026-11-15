@@ -114,18 +114,18 @@ export const editorText = {
   imageExportInfo:
     "Bei PNG und JPEG wird jede ausgewählte Seite als eigene Bilddatei heruntergeladen.",
   pdfInfo:
-    "Die PDF enthält rasterisierte Seiten in Original-Millimetern und kann in GoodNotes importiert werden.",
+    "Die PDF enthält rasterisierte Seiten in Original-Millimetern. Für GoodNotes wähle das Format GoodNotes: Es erzeugt eine echte .goodnotes-Datei.",
   close: "Schließen",
   cancel: "Abbrechen",
   exportDone: "Export fertig.",
-  goodNotesSend: "An GoodNotes senden",
-  goodNotesShared: "PDF geteilt. In GoodNotes landet es als neues Notizbuch.",
+  goodNotesShared:
+    "GoodNotes-Datei geteilt. In GoodNotes öffnet sie sich als eigenes Notizbuch.",
   goodNotesDownloaded:
-    "PDF gespeichert. In GoodNotes: Neu → Importieren und die Datei auswählen.",
+    "GoodNotes-Datei gespeichert (.goodnotes). Öffne sie auf iPad oder Mac, GoodNotes legt daraus ein Notizbuch an.",
   goodNotesInfo:
-    "Deine Handschrift wird als echte Stiftstriche gespeichert, das Papier als Hintergrund. In GoodNotes lassen sich die Striche auswählen, umfärben und radieren. Auf iPad und iPhone öffnet sich das Teilen-Menü: dort GoodNotes wählen.",
+    "Echte GoodNotes-Datei (.goodnotes): Deine Handschrift wird als GoodNotes-Tinte gespeichert und lässt sich radieren, mit dem Lasso auswählen und umfärben. Das Blatt ist das Papier der Seite. Pro Seite entsteht ein Notizbuch. Auf iPad und iPhone öffnet sich das Teilen-Menü: dort GoodNotes wählen.",
   editableFlatHint:
-    "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung und sind deshalb nicht radierbar, sondern Teil des Hintergrunds.",
+    "{count} Textblock/Textblöcke nutzen eine eingebaute Schrift oder Zeichen ohne Zeichnung. Sie stehen im Papier der Seite und sind deshalb nicht radierbar.",
   exportProHint: "300 dpi sowie PNG und JPEG gibt es mit Pro.",
   untitledFile: "scriptly-dokument",
   zoom: "Vorschau",
