@@ -60,6 +60,9 @@ export const fontTexts = {
   guideBase: "Grundlinie",
   guideBottom: "Unterlinie",
   guideWidth: "Breite",
+  viewSize: "Ansichtsgröße",
+  viewSizeHint:
+    "Ändert nur, wie groß Zeichenfläche und Schriftprobe hier angezeigt werden. Deine Buchstaben, die Stiftstärke und die Schrift im Dokument bleiben genau gleich.",
   hintCapital:
     "Großbuchstaben und Ziffern stehen auf der Grundlinie und reichen bis zur Oberlinie. Die blasse Vorlage zeigt die Größe.",
   hintAscender:

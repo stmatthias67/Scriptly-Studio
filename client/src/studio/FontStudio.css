@@ -618,7 +618,7 @@
 
 .font-preview-text {
   color: var(--font-ink);
-  font-size: clamp(1.5rem, 3vw, 2.45rem);
+  font-size: calc(clamp(1.5rem, 3vw, 2.45rem) * var(--font-view-scale, 1));
   line-height: 1.45;
   margin: 19px 2px;
   overflow-wrap: anywhere;
@@ -975,4 +975,31 @@ html[data-theme="dark"] .character-cell.complete:not(.selected) {
 .font-width-slider input:not([type="range"]) {
   padding: 6px 8px;
   width: 64px;
+}
+
+.font-view-size {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin: 0 auto 4px;
+  max-width: 440px;
+  width: 100%;
+  color: var(--font-muted, var(--muted));
+  font-size: 12px;
+}
+.font-view-size input[type="range"] {
+  accent-color: var(--accent);
+  flex: 1;
+}
+.font-view-size output {
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  text-align: right;
+}
+.font-view-size-hint {
+  color: var(--font-muted, var(--muted));
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0 auto 12px;
+  max-width: 440px;
 }

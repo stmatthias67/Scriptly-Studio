@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -47,6 +48,21 @@ import {
 import "./FontStudio.css";
 
 const MAX_VARIANTS = 3;
+/** Width of the drawing area at 100 % view size, in CSS pixels. */
+const CANVAS_BASE_WIDTH = 440;
+const VIEW_SCALE_MIN = 50;
+const VIEW_SCALE_MAX = 160;
+const VIEW_SCALE_KEY = "scriptly-font-view-scale";
+
+function readViewScale(): number {
+  try {
+    const stored = Number(localStorage.getItem(VIEW_SCALE_KEY));
+    if (stored >= VIEW_SCALE_MIN && stored <= VIEW_SCALE_MAX) return stored;
+  } catch {
+    // ignore unavailable storage
+  }
+  return 100;
+}
 const DRAWING_SIZE = 400;
 
 type Tool = "pen" | "eraser";
@@ -169,6 +185,16 @@ function FontWorkspace({
   const [tool, setTool] = useState<Tool>("pen");
   const [penWidth, setPenWidth] = useState<number>(PEN_DEFAULT);
   const [showGuides, setShowGuides] = useState(true);
+  // Display size only: drawing happens in fixed 400-unit coordinates, so this
+  // never changes the stored strokes, pen width or the font in documents.
+  const [viewScale, setViewScale] = useState(readViewScale);
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_SCALE_KEY, String(viewScale));
+    } catch {
+      // Storage may be unavailable (private mode); the setting is a convenience.
+    }
+  }, [viewScale]);
   const [eraserAt, setEraserAt] = useState<Point | null>(null);
   const templateRef = useRef<SVGTextElement | null>(null);
   const [templateBox, setTemplateBox] = useState<{
@@ -733,7 +759,25 @@ function FontWorkspace({
             </div>
           </div>
 
-          <div className="font-canvas-wrap">
+          <label className="font-view-size">
+            <span>{t.viewSize}</span>
+            <input
+              type="range"
+              min={VIEW_SCALE_MIN}
+              max={VIEW_SCALE_MAX}
+              step={5}
+              value={viewScale}
+              aria-label={t.viewSize}
+              onChange={event => setViewScale(Number(event.target.value))}
+            />
+            <output>{viewScale}%</output>
+          </label>
+          <p className="font-view-size-hint">{t.viewSizeHint}</p>
+
+          <div
+            className="font-canvas-wrap"
+            style={{ maxWidth: (CANVAS_BASE_WIDTH * viewScale) / 100 }}
+          >
             <svg
               ref={svgRef}
               className={`font-canvas ${tool === "eraser" ? "erasing" : ""}`}
@@ -946,7 +990,10 @@ function FontWorkspace({
             onChange={event => setPreviewText(event.target.value.slice(0, 700))}
           />
         </label>
-        <p className="font-preview-text">
+        <p
+          className="font-preview-text"
+          style={{ "--font-view-scale": viewScale / 100 } as CSSProperties}
+        >
           {(() => {
             const seen = new Map<string, number>();
             return [...previewText].map((character, index) => {
