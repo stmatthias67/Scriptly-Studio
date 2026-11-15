@@ -866,7 +866,7 @@ async function drawElement(
 }
 
 /**
- * Single visual source for PaperPreview, PDF and image export.
+ * Single visual source for PaperPreview, GoodNotes and image export.
  * Coordinates in page elements are always 96-DPI base pixels, not CSS pixels.
  */
 export async function renderPage(

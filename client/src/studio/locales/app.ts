@@ -89,7 +89,7 @@ export const de = {
     ],
     [
       "4. Mitnehmen",
-      "Exportiere dein Dokument im Format GoodNotes als echte .goodnotes-Datei: Deine Handschrift wird dort zu radierbarer GoodNotes-Tinte. Daneben gibt es PDF, PNG und JPEG für andere Zwecke.",
+      "Exportiere dein Dokument im Format GoodNotes als echte .goodnotes-Datei: Deine Handschrift wird dort zu radierbarer GoodNotes-Tinte. Daneben gibt es PNG und JPEG als Bilder.",
     ],
   ],
 };

@@ -24,7 +24,7 @@ Im Papier-Studio gibt es drei Standardblätter (liniert, punktiert, kariert) unt
 
 Unter „Abo“ gibt es die Pläne Free, Pro und Lifetime mit einem reinen Test-Checkout (Google Play, Kreditkarte, PayPal simuliert, keine Zahlungsdaten). Free ist auf zwei Handschriften und ein eigenes Blatt begrenzt. Funktionen, die es noch nicht gibt, sind als „bald verfügbar“ markiert.
 
-PDF, PNG und JPEG verwenden denselben Canvas-Renderer wie die Vorschau. PDFs bewahren die Original-Millimetermaße, auch bei verschiedenen Formaten innerhalb eines Dokuments. Die Inhalte sind rasterisiert, nicht als auswählbarer Vektortext gespeichert. 96, 150 und 300 dpi sind wählbar, innerhalb eines Sicherheitslimits von 16 Millionen Pixeln pro Seite. Bei Bildformaten wird jede gewählte Seite einzeln heruntergeladen; manche Browser fragen nach einer Erlaubnis für mehrere Downloads. Beschädigte Bilddaten führen zu einer verständlichen Exportfehlermeldung, nicht zu einem scheinbar vollständigen Download. Für GoodNotes ist das Format „GoodNotes“ gedacht, nicht PDF.
+GoodNotes, PNG und JPEG verwenden denselben Canvas-Renderer wie die Vorschau. Einen PDF-Export gibt es nicht mehr; für GoodNotes entsteht ausschließlich eine `.goodnotes`-Datei. 96, 150 und 300 dpi sind wählbar, innerhalb eines Sicherheitslimits von 16 Millionen Pixeln pro Seite. Bei Bildformaten wird jede gewählte Seite einzeln heruntergeladen.
 
 ## Speicherung und Datenschutz
 
@@ -46,7 +46,7 @@ Nach `pnpm build:static` prüft `node tests/production-check.mjs` den gebauten P
 
 ## GoodNotes-Export (.goodnotes)
 
-Das Format „GoodNotes“ im Export erzeugt ausschließlich native GoodNotes-Notizbücher mit der Endung `.goodnotes`; dieser Weg erzeugt und übergibt nie eine PDF. Text aus eigenen Handschriften wird als echte GoodNotes-Tinte geschrieben und lässt sich in GoodNotes radieren, mit dem Lasso auswählen und umfärben. Das Blatt mit Bildern, Formen und Text in eingebauten Schriften ist das Papier der Seite.
+Das Format „GoodNotes“ im Export erzeugt ausschließlich native GoodNotes-Notizbücher mit der Endung `.goodnotes`; dieser Weg erzeugt und übergibt nie eine PDF. Text aus eigenen Handschriften wird als echte GoodNotes-Tinte geschrieben und lässt sich in GoodNotes radieren, mit dem Lasso auswählen und umfärben. Das Blatt mit Bildern, Formen und Text in eingebauten Schriften ist das Papier der Seite. GoodNotes selbst speichert das Papier jeder Seite intern als PDF-Anlage im Notizbuch (auch ein leeres, in GoodNotes angelegtes Notizbuch enthält sie); nach außen wird nie eine PDF exportiert oder weitergegeben.
 
 Bedienung: Im Dokument „Exportieren“ wählen, Format „GoodNotes“ (Standard), „Export starten“. Auf iPad/iPhone öffnet sich das Teilen-Menü, dort GoodNotes wählen; sonst werden die `.goodnotes`-Dateien heruntergeladen und auf iPad oder Mac geöffnet. Pro Dokumentseite entsteht ein eigenes Notizbuch, weil die Notizbuch-Hülle genau eine Seite beschreibt. Seiten, die nicht A4 hochkant sind, werden auf A4 eingepasst.
 

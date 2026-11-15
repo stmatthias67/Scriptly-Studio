@@ -18,7 +18,7 @@ const GOODNOTES_MIME = "application/octet-stream";
 import { paperDimensions } from "./types";
 import { editorText as t } from "./locales/editor";
 
-export type ExportFormat = "pdf" | "goodnotes" | "png" | "jpeg";
+export type ExportFormat = "goodnotes" | "png" | "jpeg";
 export type ExportScope = "all" | "current" | "selected";
 
 export interface ExportDialogProps {
@@ -104,51 +104,6 @@ function downloadDataUrl(dataUrl: string, fileName: string): void {
   link.remove();
 }
 
-/** Renders the chosen pages into one PDF with the original millimetre sizes. */
-async function buildPdf(
-  document: StudioDocument,
-  fonts: FontProject[],
-  indexes: number[],
-  dpi: number,
-  onProgress?: (current: number, total: number) => void
-) {
-  ensureRenderable(document, indexes, dpi);
-  const { jsPDF } = await import("jspdf");
-  const first = document.pages[indexes[0]];
-  const firstDimensions = paperDimensions(first.paper);
-  const pdf = new jsPDF({
-    orientation:
-      firstDimensions.width > firstDimensions.height ? "landscape" : "portrait",
-    unit: "mm",
-    format: [firstDimensions.width, firstDimensions.height],
-    compress: true,
-  });
-  for (let position = 0; position < indexes.length; position += 1) {
-    const index = indexes[position];
-    const page = document.pages[index];
-    const dimensions = paperDimensions(page.paper);
-    if (position > 0) {
-      pdf.addPage(
-        [dimensions.width, dimensions.height],
-        dimensions.width > dimensions.height ? "landscape" : "portrait"
-      );
-    }
-    onProgress?.(position + 1, indexes.length);
-    const canvas = await renderPage(page, fonts, dpi / 96, index + 1);
-    pdf.addImage(
-      canvas.toDataURL("image/png"),
-      "PNG",
-      0,
-      0,
-      dimensions.width,
-      dimensions.height,
-      undefined,
-      "FAST"
-    );
-  }
-  return pdf;
-}
-
 function downloadBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
   const link = window.document.createElement("a");
@@ -156,18 +111,6 @@ function downloadBlob(blob: Blob, name: string) {
   link.download = name;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-}
-
-export async function exportPdf(
-  document: StudioDocument,
-  fonts: FontProject[] = [],
-  indexes: number[],
-  filename: string,
-  dpi = 150,
-  onProgress?: (current: number, total: number) => void
-): Promise<void> {
-  const pdf = await buildPdf(document, fonts, indexes, dpi, onProgress);
-  pdf.save(`${sanitizeFilename(filename)}.pdf`);
 }
 
 /**
@@ -354,25 +297,15 @@ export default function ExportDialog({
         onClose();
         return;
       }
-      if (format === "pdf")
-        await exportPdf(
-          document,
-          fonts,
-          indexes,
-          safeFilename,
-          dpi,
-          updateProgress
-        );
-      else
-        await exportImages(
-          document,
-          fonts,
-          indexes,
-          safeFilename,
-          format,
-          dpi,
-          updateProgress
-        );
+      await exportImages(
+        document,
+        fonts,
+        indexes,
+        safeFilename,
+        format,
+        dpi,
+        updateProgress
+      );
       toast.success(t.exportDone);
       onClose();
     } catch (reason) {
@@ -414,7 +347,6 @@ export default function ExportDialog({
             disabled={busy}
           >
             <option value="goodnotes">GoodNotes</option>
-            <option value="pdf">PDF</option>
             <option value="png" disabled={!isPro}>
               PNG{isPro ? "" : " · Pro"}
             </option>
@@ -495,11 +427,6 @@ export default function ExportDialog({
             <>
               <FileText size={16} />
               {t.goodNotesInfo}
-            </>
-          ) : format === "pdf" ? (
-            <>
-              <FileText size={16} />
-              {t.pdfInfo}
             </>
           ) : (
             <>

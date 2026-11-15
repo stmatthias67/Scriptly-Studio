@@ -113,8 +113,6 @@ export const editorText = {
     "Diese Auflösung ist für das Papierformat zu hoch. Wähle bitte eine kleinere Auflösung.",
   imageExportInfo:
     "Bei PNG und JPEG wird jede ausgewählte Seite als eigene Bilddatei heruntergeladen.",
-  pdfInfo:
-    "Die PDF enthält rasterisierte Seiten in Original-Millimetern. Für GoodNotes wähle das Format GoodNotes: Es erzeugt eine echte .goodnotes-Datei.",
   close: "Schließen",
   cancel: "Abbrechen",
   exportDone: "Export fertig.",
