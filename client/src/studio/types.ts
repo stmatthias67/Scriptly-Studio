@@ -227,7 +227,7 @@ export const defaultSettings: StudioSettings = {
   sidebarCollapsed: false,
   startScreen: "/",
   shortcuts: true,
-  defaultFontId: "caveat",
+  defaultFontId: "",
   defaultFontSize: 28,
   defaultColor: "#354c43",
   defaultLineHeight: 1.5,

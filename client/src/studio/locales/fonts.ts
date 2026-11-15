@@ -48,10 +48,12 @@ export const fontTexts = {
   eraserHint:
     "Der Radierer löscht nur, was unter dem Kreis liegt. Fahre langsam über die Stelle, die weg soll.",
   noCharactersYet: "Noch keine Zeichen gezeichnet",
-  limitTitle: "Zwei Handschriften sind im kostenlosen Plan enthalten",
+  limitTitle: "Eine Handschrift ist im kostenlosen Plan enthalten",
   limitDescription:
     "Mit Pro oder Lifetime legst du unbegrenzt viele Handschriften an. Deine bisherigen Schriften bleiben erhalten.",
   limitUpgrade: "Pläne ansehen",
+  variantPlanLimit:
+    "Im kostenlosen Plan gibt es eine Variante pro Buchstabe. Mit Pro zeichnest du bis zu drei, die sich im Text abwechseln.",
   penFine: "Fein",
   penMedium: "Mittel",
   penBold: "Kräftig",

@@ -21,6 +21,7 @@ export const paperLocale = {
   previewDefault:
     "So sieht deine Schrift auf diesem Blatt aus. Stelle den Zeilenabstand ein, bis jede Zeile genau auf einer Linie steht.\nAuch die zweite und dritte Zeile müssen sitzen, dann passt das Raster.",
   font: "Schrift",
+  noOwnFont: "Noch keine eigene Handschrift",
   fontSize: "Schriftgröße",
   pixels: "px",
   millimetres: "mm",

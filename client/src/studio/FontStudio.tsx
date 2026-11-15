@@ -164,7 +164,7 @@ function FontWorkspace({
   initialProject: FontProject;
   isDraft?: boolean;
 }) {
-  const { updateFont } = useStudio();
+  const { updateFont, settings } = useStudio();
   const savedRef = useRef(!isDraft);
   const [, navigate] = useLocation();
   const projectRef = useRef<FontProject>(initialProject);
@@ -519,6 +519,12 @@ function FontWorkspace({
   function addVariant() {
     if (currentVariants.length >= MAX_VARIANTS) {
       toast.message(t.variantLimit);
+      return;
+    }
+    if (currentVariants.length >= planLimits(settings.plan).variants) {
+      toast.error(t.variantPlanLimit, {
+        action: { label: t.limitUpgrade, onClick: () => navigate("/abo") },
+      });
       return;
     }
     persistStrokes(strokesRef.current);

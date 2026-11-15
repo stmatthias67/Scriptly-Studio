@@ -22,8 +22,7 @@ export const settingsText = {
   defaultsDescription:
     "Diese Einstellungen gelten für neu angelegte Dokumente. Bestehende Seiten bleiben unverändert.",
   font: "Standardschrift",
-  fontExample: "Caveat · Beispielhandschrift",
-  interfaceFont: "Manrope · Druckschrift",
+  noOwnFont: "Noch keine eigene Handschrift",
   size: "Schriftgröße (px)",
   color: "Textfarbe",
   lineHeight: "Zeilenabstand",

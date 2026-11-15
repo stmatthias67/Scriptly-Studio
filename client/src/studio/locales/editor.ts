@@ -44,8 +44,10 @@ export const editorText = {
   textContent: "Inhalt",
   applyText: "Text übernehmen",
   font: "Schrift",
-  systemFont: "Systemschrift",
-  sampleHandwriting: "Beispielhandschrift",
+  retiredFont: "Testschrift (nicht mehr verfügbar)",
+  pageLimit:
+    "Im kostenlosen Plan hat ein Dokument höchstens {count} Seiten. Mit Pro gibt es kein Seitenlimit.",
+  plans: "Pläne ansehen",
   customHandwriting: "Eigene Schrift",
   size: "Größe",
   color: "Farbe",

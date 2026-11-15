@@ -260,7 +260,9 @@ export default function Subscription() {
             {settings.planCycle
               ? ` (${settings.planCycle === "yearly" ? "jährlich" : "monatlich"})`
               : ""}
-            . {data.fonts.length} Handschriften und {uploads} eigene Blätter
+            . {data.fonts.length}{" "}
+            {data.fonts.length === 1 ? "Handschrift" : "Handschriften"} und{" "}
+            {uploads} {uploads === 1 ? "eigenes Blatt" : "eigene Blätter"}{" "}
             angelegt.
           </p>
         </div>

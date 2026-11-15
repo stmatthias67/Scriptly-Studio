@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { NumberField } from "./components";
 import PaperPreview from "./PaperPreview";
 import { paperLocale as t } from "./locales/paper";
-import { useStudio } from "./store";
+import { defaultHandwriting, useStudio } from "./store";
 import { loadFontVariants } from "./font-engine";
 import { textBoxOnPaper } from "./render";
 import { detectSheetLines } from "./sheet-detect";
@@ -170,7 +170,9 @@ export default function PaperStudio({ templateId }: PaperStudioProps) {
     initial ? draftFrom(initial) : undefined
   );
   const [previewText, setPreviewText] = useState<string>(t.previewDefault);
-  const [fontId, setFontId] = useState(settings.defaultFontId || "caveat");
+  const [fontId, setFontId] = useState(() =>
+    defaultHandwriting(data.fonts, settings.defaultFontId)
+  );
   const [fontSize, setFontSize] = useState(settings.defaultFontSize);
   const [fontsReady, setFontsReady] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -411,7 +413,9 @@ export default function PaperStudio({ templateId }: PaperStudioProps) {
                     value={fontId}
                     onChange={event => setFontId(event.target.value)}
                   >
-                    <option value="caveat">Caveat</option>
+                    {!data.fonts.length && (
+                      <option value="">{t.noOwnFont}</option>
+                    )}
                     {data.fonts.map(font => (
                       <option key={font.id} value={font.id}>
                         {font.name}

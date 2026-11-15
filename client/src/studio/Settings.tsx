@@ -12,7 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useStudio } from "./store";
+import { defaultHandwriting, useStudio } from "./store";
 import { de } from "./locales/app";
 import { settingsText as t } from "./locales/settings";
 import { Field, NumberField } from "./components";
@@ -231,13 +231,14 @@ export default function Settings() {
             <div className="settings-fields">
               <Field label={t.font}>
                 <select
-                  value={settings.defaultFontId}
+                  value={defaultHandwriting(data.fonts, settings.defaultFontId)}
                   onChange={e =>
                     updateSettings({ defaultFontId: e.target.value })
                   }
                 >
-                  <option value="caveat">{t.fontExample}</option>
-                  <option value="manrope">{t.interfaceFont}</option>
+                  {!data.fonts.length && (
+                    <option value="">{t.noOwnFont}</option>
+                  )}
                   {data.fonts.map(font => (
                     <option key={font.id} value={font.id}>
                       {font.name}

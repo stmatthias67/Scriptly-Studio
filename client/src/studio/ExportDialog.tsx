@@ -11,6 +11,7 @@ import { Modal } from "./components";
 import { MAX_RENDER_PIXELS, pagePixelDimensions, renderPage } from "./render";
 import type { FontProject, StudioDocument } from "./types";
 import { useStudio } from "./store";
+import { planLimits } from "./plan";
 import { buildGoodnotesFiles, type GoodNotesExport } from "./goodnotes-export";
 
 /** GoodNotes notebooks are ZIP-based; the .goodnotes extension identifies them. */
@@ -204,7 +205,8 @@ export default function ExportDialog({
   currentPageIndex = 0,
 }: ExportDialogProps) {
   const { settings } = useStudio();
-  const isPro = settings.plan !== "free";
+  const limits = planLimits(settings.plan);
+  const isPro = limits.imageExport;
   const [format, setFormat] = useState<ExportFormat>("goodnotes");
   const [scope, setScope] = useState<ExportScope>("all");
   const [range, setRange] = useState("");
@@ -408,8 +410,8 @@ export default function ExportDialog({
           >
             <option value={96}>96 dpi</option>
             <option value={150}>150 dpi</option>
-            <option value={300} disabled={!isPro}>
-              300 dpi{isPro ? "" : " · Pro"}
+            <option value={300} disabled={limits.dpi < 300}>
+              300 dpi{limits.dpi < 300 ? " · Pro" : ""}
             </option>
           </select>
         </label>

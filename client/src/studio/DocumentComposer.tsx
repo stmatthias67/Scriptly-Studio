@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ArrowLeft, ChevronRight, FileText, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { useStudio } from "./store";
+import { defaultHandwriting, useStudio } from "./store";
+import { planLimits } from "./plan";
 import { appCopy as c, de } from "./locales/app";
 import { basePaper, createPage, createText } from "./types";
 import type { FontProject, PaperSettings, StudioPage } from "./types";
@@ -115,7 +116,9 @@ export default function DocumentComposer() {
   const [, navigate] = useLocation();
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
-  const [fontId, setFontId] = useState(settings.defaultFontId || "caveat");
+  const [fontId, setFontId] = useState(() =>
+    defaultHandwriting(data.fonts, settings.defaultFontId)
+  );
   const [color, setColor] = useState(settings.defaultColor);
   const [fontSize, setFontSize] = useState(settings.defaultFontSize);
   const [paperId, setPaperId] = useState(() => {
@@ -137,13 +140,25 @@ export default function DocumentComposer() {
     basePaper;
 
   const generate = async () => {
+    if (!data.fonts.some(font => font.id === fontId)) {
+      toast.error(
+        "Erstelle zuerst eine eigene Handschrift unter „Meine Schriften“.",
+        {
+          action: {
+            label: "Schrift erstellen",
+            onClick: () => navigate("/schrift-erstellen"),
+          },
+        }
+      );
+      return;
+    }
     if (!text.trim()) {
       toast.error("Bitte gib zuerst einen Text ein.");
       return;
     }
     // The handwriting must be installed before measuring where its baseline sits.
     await loadFontVariants(data.fonts);
-    const document = createDocument(selectedPaper);
+    const pageLimit = planLimits(settings.plan).pages;
     const pages = generatedPages(
       text,
       selectedPaper,
@@ -152,6 +167,14 @@ export default function DocumentComposer() {
       fontSize,
       settings
     );
+    if (pages.length > pageLimit) {
+      toast.error(
+        `Dein Text braucht ${pages.length} Seiten. Im kostenlosen Plan sind es höchstens ${pageLimit}. Kürze den Text oder wechsle zu Pro.`,
+        { action: { label: "Pläne ansehen", onClick: () => navigate("/abo") } }
+      );
+      return;
+    }
+    const document = createDocument(selectedPaper);
     updateDocument({
       ...document,
       title: title.trim().slice(0, 100) || "Neues handschriftliches Dokument",
@@ -226,8 +249,9 @@ export default function DocumentComposer() {
               value={fontId}
               onChange={event => setFontId(event.target.value)}
             >
-              <option value="caveat">Caveat · Beispielhandschrift</option>
-              <option value="manrope">Manrope · klar und ruhig</option>
+              {!data.fonts.length && (
+                <option value="">Noch keine eigene Handschrift</option>
+              )}
               {data.fonts.map(font => (
                 <FontOption key={font.id} font={font} />
               ))}

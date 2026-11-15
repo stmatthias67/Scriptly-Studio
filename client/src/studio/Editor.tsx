@@ -41,6 +41,7 @@ import ExportDialog from "./ExportDialog";
 import PaperPreview from "./PaperPreview";
 import { PaperControls } from "./PaperControls";
 import { NumberField } from "./components";
+import { planLimits } from "./plan";
 import {
   missingGlyphs,
   pagePixelDimensions,
@@ -222,8 +223,17 @@ export default function Editor({ documentId }: { documentId: string }) {
     setSelectedElementId(null);
   };
 
+  const pageLimitReached = () => {
+    const limit = planLimits(settings.plan).pages;
+    if ((documentRef.current?.pages.length ?? 0) < limit) return false;
+    toast.error(t.pageLimit.replace("{count}", String(limit)), {
+      action: { label: t.plans, onClick: () => navigate("/abo") },
+    });
+    return true;
+  };
+
   const addPage = (afterIndex = currentPageIndex) => {
-    if (!documentRef.current) return;
+    if (!documentRef.current || pageLimitReached()) return;
     const paper =
       documentRef.current.pages[Math.max(0, afterIndex)]?.paper ??
       settings.defaultPaper;
@@ -236,6 +246,7 @@ export default function Editor({ documentId }: { documentId: string }) {
   };
 
   const duplicatePage = (index: number) => {
+    if (pageLimitReached()) return;
     mutateDocument(draft => {
       const source = draft.pages[index];
       if (!source) return;
@@ -859,8 +870,13 @@ export default function Editor({ documentId }: { documentId: string }) {
                           })
                         }
                       >
-                        <option value="caveat">{t.sampleHandwriting}</option>
-                        <option value="manrope">{t.systemFont}</option>
+                        {!data.fonts.some(
+                          font => font.id === selectedElement.fontId
+                        ) && (
+                          <option value={selectedElement.fontId} disabled>
+                            {t.retiredFont}
+                          </option>
+                        )}
                         {data.fonts.map(font => (
                           <option value={font.id} key={font.id}>
                             {font.name}

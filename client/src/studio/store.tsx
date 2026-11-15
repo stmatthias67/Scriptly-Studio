@@ -332,6 +332,17 @@ export const saveStatusLabels: Record<SaveStatus, string> = {
   error: de.saveError,
 };
 
+/**
+ * The handwriting new text uses: the chosen default if it still exists, otherwise
+ * the first own font. Built-in test fonts are no longer offered.
+ */
+export function defaultHandwriting(
+  fonts: FontProject[],
+  preferred?: string
+): string {
+  return fonts.find(font => font.id === preferred)?.id ?? fonts[0]?.id ?? "";
+}
+
 /** A fresh, unsaved font project. It is only stored once someone actually edits it. */
 export function newFontProject(name = c.defaultFontName): FontProject {
   return {
